@@ -1,0 +1,6 @@
+name,type,task,description,resource,sha1sum,size(MB),num_files
+artaxor,image,detection,Detect arthropods,kaggle:mistag/arthropod-taxonomy-orders-object-detection-dataset,,,
+paperprototype,image,detection,Detect elements in handraw papers,https://arcraftimages.s3-accelerate.amazonaws.com/Datasets/PaperPrototype/PaperPrototypePascalVOC.zip,07dc1b46c349f3cb99867dc8e80d90f1cd287757,43.0,186.0
+raccoon,image,detection,Detect raccoons,https://arcraftimages.s3-accelerate.amazonaws.com/Datasets/Raccoon/RaccoonPascalVOC.zip,6720cc79add41a7b17c225d237b6866cd7ef4d53,46.0,394.0
+tomato,image,detection,Detect tomatos,https://arcraftimages.s3-accelerate.amazonaws.com/Datasets/Tomato/TomatoPascalVOC.zip,638cd3a931fbd5318ba3b56023b18040bd15fc13,1792.0,180.0
+wheat,image,detection,Identify wheat heads,kaggle:global-wheat-detection,,,
