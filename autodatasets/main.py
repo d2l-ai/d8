@@ -15,36 +15,7 @@ pd.set_option('display.max_columns', 500)
 
 pd.set_option('display.width', 1000)
 
-def get_sha1(filepath: pathlib.Path):
-    if not filepath.exists():
-        return None
-    sha1 = hashlib.sha1()
-    with filepath.open('rb') as f:
-        while True:
-            data = f.read(2**20)
-            if not data:
-                break
-            sha1.update(data)
-    return sha1.hexdigest()
 
-def download(url: str, save_filepath: pathlib.Path, sha1_hash=None, overwrite=False):
-    if save_filepath.exists() and sha1_hash and not overwrite:
-        if sha1_hash == get_sha1(save_filepath):
-            logging.info(f'Found valid cache at {save_filepath}. Skip downloading.')
-            return
-    logging.info(f'Downloading {url} into {save_filepath.parent}')
-    if not save_filepath.parent.exists():
-        save_filepath.parent.mkdir(parents=True)
-    r = requests.get(url, stream=True, verify=True)
-    r.raise_for_status()
-    total_size_in_bytes = int(r.headers.get('content-length', 0))
-    progress_bar = tqdm.tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True)
-    block_size = 2**20
-    with save_filepath.open('wb') as f:
-        for chunk in r.iter_content(chunk_size=block_size):
-            f.write(chunk)
-            progress_bar.update(len(chunk))
-    progress_bar.close()
 
 def _is_null(series):
     return series.isnull().values.all()
@@ -71,29 +42,29 @@ class AutoDatasets():
         if len(entry) == 0:
             raise KeyError(f'Dataset name {name} not found in {self._meta_path}')
         urls = entry['resource'].to_list()[0].split(';')
-        has_sha1 = not _is_null(entry['sha1sum'])
-        if has_sha1:
-            sha1s = entry['sha1sum'].to_list()[0].split(';')
-            if len(sha1s) != len(urls):
-                has_sha1 = False
-        if not has_sha1:
-            sha1s = [None] * len(urls)
+        # has_sha1 = not _is_null(entry['sha1sum'])
+        # if has_sha1:
+        #     sha1s = entry['sha1sum'].to_list()[0].split(';')
+        #     if len(sha1s) != len(urls):
+        #         has_sha1 = False
+        # if not has_sha1:
+        #     sha1s = [None] * len(urls)
         save_filepaths = []
-        for url, sha1 in zip(urls, sha1s):
+        for url in urls:
             filename = url.split('/')[-1]
             save_filepaths.append(pathlib.Path.home()/'.autodatasets'/name/filename)
-            download(url, save_filepaths[-1], sha1)
-        if not has_sha1:
-            sha1s, size, num_files = [], 0, 0
-            for filepath in save_filepaths:
-                sha1s.append(get_sha1(filepath))
-                rd = file_reader.create_reader(filepath)
-                size += rd.size // 2**20
-                num_files += len(rd.list_files())
-            self._meta.loc[row_idx, 'sha1sum'] = ';'.join(sha1s)
-            self._meta.loc[row_idx, 'size(MB)'] = size
-            self._meta.loc[row_idx, 'num_files'] = num_files
-            self._write_meta()
+            download(url, save_filepaths[-1])
+        # if not has_sha1:
+        #     sha1s, size, num_files = [], 0, 0
+        #     for filepath in save_filepaths:
+        #         sha1s.append(get_sha1(filepath))
+        #         rd = file_reader.create_reader(filepath)
+        #         size += rd.size // 2**20
+        #         num_files += len(rd.list_files())
+        #     self._meta.loc[row_idx, 'sha1sum'] = ';'.join(sha1s)
+        #     self._meta.loc[row_idx, 'size(MB)'] = size
+        #     self._meta.loc[row_idx, 'num_files'] = num_files
+        #     self._write_meta()
         return save_filepaths
 
     def list(self, **kwargs):
