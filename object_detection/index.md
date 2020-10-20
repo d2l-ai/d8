@@ -1,16 +1,18 @@
 # Object Detection Datasets
+:label:`sec_object_detection`
 
-Summary of all provided datasets
+A object detection dataset should contain at least two components, the raw images stored on a folder or a zip/tar file, a DataFrame containing the labels. Let's print an example DataFrame:
 
 ```{.python .input}
 from autodatasets import object_detection
-import pandas as pd 
 
-names = object_detection.list_datasets()
-
-summaries = [object_detection.get_dataset(name).summary().loc['train'].to_dict() for name in names]
-pd.DataFrame(summaries, index=names)
+ds = object_detection.get_dataset(object_detection.list_datasets()[0])
+ds.train_df.head()
 ```
+
+You can see that it must contain 6 columns ...
+
+Next, here is a list of examples how to prepare various detection datasets
 
 ```toc
 kaggle

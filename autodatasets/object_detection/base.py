@@ -13,9 +13,7 @@ import logging
 
 from .. import data_downloader
 from .. import data_reader
-
-# TYPE = 'image'
-# TASK = 'detection'
+from .. import dataset
 
 @dataclasses.dataclass
 class Label:
@@ -26,21 +24,17 @@ class Label:
     xmax: float
     ymax: float
 
+    def project(self):
+        self.xmin = max(0, self.xmin)
+        self.ymin = max(0, self.ymin)
+        self.xmax = min(1.0, self.xmax)
+        self.ymax = min(1.0, self.ymax)
+
     def is_valid(self) -> bool:
         if not (0 <= self.xmin <= 1 and 0 <= self.ymin <= 1 and
                 self.xmin <= self.xmax <= 1 and self.ymin <= self.ymax <= 1):
             return False
         return True
-
-
-# @dataclasses.dataclass
-# class DatasetInfo:
-#     name: str
-#     # description: str
-#     url: str
-#     train_fn: Tuple[Callable, Tuple[Any]]
-#     valid_fn: Optional[Tuple[Callable, Tuple[Any]]] = None
-#     test_fn: Optional[Tuple[Callable, Tuple[Any]]] = None
 
 def _parse_voc_annotation(xml_fp, image_dir) -> List[Label]:
     root = ET.parse(xml_fp).getroot()
@@ -57,6 +51,7 @@ def _parse_voc_annotation(xml_fp, image_dir) -> List[Label]:
         xmax = float(xml_box.find('xmax').text) / width
         ymax = float(xml_box.find('ymax').text) / height
         label = Label(str(filepath), classname, xmin, ymin, xmax, ymax)
+        label.project()
         if not label.is_valid():
             logging.warning(f'Invalid label {label}')
         labels.append(label)
@@ -75,69 +70,9 @@ def parse_voc(reader, image_dir, annotation_dir):
                 entries.extend(labels)
     return pd.DataFrame(entries)
 
-
-# _MAKEML_DATA_URL = 'https://arcraftimages.s3-accelerate.amazonaws.com/Datasets/'
-
-# DATASETS = [
-#     DatasetInfo('raccoon',
-#                 'Detect raccoons',
-#                 _MAKEML_DATA_URL+'Raccoon/RaccoonPascalVOC.zip',
-#                 (parse_voc, ('images', 'annotations'))
-#     ),
-#     DatasetInfo('paperprototype',
-#                 'Detect elements in handraw papers',
-#                 _MAKEML_DATA_URL+'PaperPrototype/PaperPrototypePascalVOC.zip',
-#                 (parse_voc, ('images', 'annotations'))
-#     ),
-#     DatasetInfo('tomato',
-#                 'Detect tomatos',
-#                 _MAKEML_DATA_URL+'Tomato/TomatoPascalVOC.zip',
-#                 (parse_voc, ('images', 'annotations'))
-#     ),
-# ]
-
 DATAROOT = pathlib.Path.home()/'.autodatasets'
 
-# def _get_df(name: str):
-#     datasets = {ds.name:ds for ds in DATASETS}
-#     if name not in datasets:
-#         raise ValueError(f'{name} is not one of {list(datasets.keys())}')
-#     ds = datasets[name]
-#     filepaths = data_downloader.download(ds.url, ROOT/name)
-#     _get_df = lambda fn: fn[0](filepaths, *fn[1]) if fn else None
-#     return filepaths, _get_df(ds.train_fn), _get_df(ds.valid_fn), _get_df(ds.test_fn)
-
-
-
-class Dataset:
-    def __init__(self, name: str, reader: data_reader,
-                 train_df: Optional[pd.DataFrame] = None,
-                 valid_df: Optional[pd.DataFrame] = None,
-                 test_df: Optional[pd.DataFrame] = None):
-        self._name = name
-        self._reader = reader
-        self._train_df = train_df
-        self._valid_df = valid_df
-        self._test_df = test_df
-
-    # #def __init__(self, name: Union[str, DatasetInfo]):
-    #     ds = self._get_ds_info(name)
-    #     filepaths = data_downloader.download(ds.url, _ROOT/ds.name)
-    #     self._reader = data_reader.create_reader(filepaths)
-    #     _get_df = lambda fn: fn[0](self._reader, *fn[1]) if fn else None
-    #     self._train_df = _get_df(ds.train_fn)
-    #     self._valid_df = _get_df(ds.valid_fn)
-    #     self._test_df = _get_df(ds.test_fn)
-
-    # def _get_ds_info(self, name):
-    #     if isinstance(name, DatasetInfo):
-    #         return name
-    #     elif isinstance(name, str):
-    #         datasets = {ds.name:ds for ds in DATASETS}
-    #         if name not in datasets:
-    #             raise ValueError(f'{name} is not one of {list(datasets.keys())}')
-    #         return datasets[name]
-    #     raise TypeError(f'str or DatasetInfo')
+class Dataset(dataset.BaseDataset):
 
     def show(self, layout=(4,2), scale=None):
         nrows, ncols = layout
@@ -154,8 +89,7 @@ class Dataset:
             img = PIL.Image.open(self._reader.open(sample[0]))
             ax.imshow(img, aspect='auto')
             img_width, img_height = img.size
-            ax.axes.get_xaxis().set_visible(False)
-            ax.axes.get_yaxis().set_visible(False)
+            ax.axis("off")
             for _, row in sample[1].iterrows():
                 bbox = plt.Rectangle(
                     xy=(row['xmin']*img_width, row['ymin']*img_height),
@@ -175,19 +109,39 @@ class Dataset:
         if self._train_df is not None: dfs['train'] = get_dfs(self._train_df)
         if self._valid_df is not None: dfs['valid'] = get_dfs(self._valid_df)
         if self._test_df is not None: dfs['test'] = get_dfs(self._test_df)
-        summary = [{'# images':len(dfs[name][1]),
-                '# bounding boxes':len(dfs[name][0]),
-                '# classes':dfs[name][0]['classname'].unique().size,
-            'size (GB)':dfs[name][1]['img_size(KB)'].sum()/2**20
-                } for name in dfs]
+        def _get_mean_std(col):
+            return f'{col.mean():.1f} ± {col.std():.1f}'
+
+        summary = []
+        for lbl_df, img_df in dfs.values():
+            merged_df = pd.merge(lbl_df, img_df, on='filepath')
+            summary.append({'# images':len(img_df),
+                    '# bboxes':len(lbl_df),
+                    '# classes':lbl_df['classname'].nunique(),
+                    'image width':_get_mean_std(img_df['width']),
+                    'image height':_get_mean_std(img_df['height']),
+                    'bbox width':_get_mean_std((merged_df['xmax']-merged_df['xmin'])*merged_df['width']),
+                    'bbox height':_get_mean_std((merged_df['ymax']-merged_df['ymin'])*merged_df['height']),
+                    'size (GB)':img_df['size (KB)'].sum()/2**20,
+                })
         return pd.DataFrame(summary, index=dfs.keys())
 
-_DATASETS = dict()
+TASK = 'object_detection'
+
 def add_dataset(name: str, func, args=[]):
-    _DATASETS[name] = (func, args)
+    dataset.add_dataset((TASK, name), func, args)
 
 def get_dataset(name: str):
-    return _DATASETS[name][0](*_DATASETS[name][1])
+    return dataset.get_dataset((TASK, name))
 
 def list_datasets():
-    return list(_DATASETS.keys())
+    return [name for task, name in dataset.list_datasets() if task == TASK]
+
+def summary():
+    names = list_datasets()
+    datasets = [get_dataset(name) for name in names]
+    summary = pd.DataFrame([ds.summary().loc['train'] for ds in datasets], index=names)
+    for name in summary:
+        if name.startswith('#'):
+            summary[name] = summary[name].astype(int)
+    return summary.sort_values('# images')

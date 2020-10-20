@@ -1,3 +1,0 @@
-name,type,task,description,resource,sha1sum,size(MB),num_files
-artaxor,image,detection,Detect arthropods,kaggle:mistag/arthropod-taxonomy-orders-object-detection-dataset,,,
-wheat,image,detection,Identify wheat heads,kaggle:global-wheat-detection,,,

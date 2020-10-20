@@ -9,9 +9,11 @@ import PIL
 import pandas as pd
 import io
 
-__all__ = ['create_reader', 'get_image_info']
-
 class Reader(abc.ABC):
+    """The base class of the data reader.
+
+    :param root: The root path.
+    """
     def __init__(self, root: pathlib.Path):
         if not root.exists():
             raise NameError(f'{root} doesn\'t exists')
@@ -43,12 +45,18 @@ class Reader(abc.ABC):
         return self.get_files(image_extensions, subdirectories)
 
 def get_image_info(reader: Reader, image_paths: Sequence[str]) -> pd.DataFrame:
+    """Query image information.
+
+    :param reader: xxx
+    :param image_paths: xxx
+    :return: xxx
+    """
     rows = []
     for img_path in image_paths:
         raw = reader.open(img_path).read()
         img = PIL.Image.open(io.BytesIO(raw))
-        rows.append({'img_size(KB)':len(raw)/2**10,
-                     'img_width(px)':img.size[0], 'img_height(px)':img.size[1]})
+        rows.append({'filepath':img_path, 'size (KB)':len(raw)/2**10,
+                     'width':img.size[0], 'height':img.size[1]})
     return pd.DataFrame(rows)
 
 

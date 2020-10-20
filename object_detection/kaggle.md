@@ -10,13 +10,13 @@ display.set_matplotlib_formats('svg')
 ```{.python .input}
 #@save_cell
 from autodatasets import data_downloader, data_reader, object_detection
+
 import pandas as pd 
 
 class KaggleWheat(object_detection.Dataset):
     def __init__(self):
         name = 'global-wheat-detection'
-        reader = data_reader.create_reader(
-            data_downloader.download_kaggle(name, object_detection.DATAROOT/name))
+        reader = data_reader.create_reader(data_downloader.download_kaggle(name))
         
         df = pd.read_csv(reader.open('train.csv'))
         bbox = df.bbox.str.split(',', expand=True)

@@ -5,13 +5,13 @@ import requests
 import tqdm
 import os
 
-def download(resource, save_dir: pathlib.Path):
+def download(resource, save_dir: pathlib.Path = None, root_dir=pathlib.Path.home()/'.autodatasets'):
     if resource.startswith('kaggle:'):
-        return download_kaggle(resource, save_dir)
+        return download_kaggle(resource[7:], root_dir)
     urls = resource.split(';')
     save_filepaths = []
     for url in urls:
-        save_filepaths.append(save_dir/url.split('/')[-1])
+        save_filepaths.append(root_dir/save_dir/url.split('/')[-1])
         _download_url(url, save_filepaths[-1])
     if len(save_filepaths) == 1:
         save_filepaths = save_filepaths[0]
@@ -58,7 +58,7 @@ def _download_url(url: str, save_filepath: pathlib.Path, overwrite=False):
         with sha1_filepath.open('w') as f:
             f.write(sha1_hash+'\n')
 
-def download_kaggle(name, save_dir):
+def download_kaggle(name, root_dir=pathlib.Path.home()/'.autodatasets'):
     """Download the dataset from Kaggle and return path of the zip file."""
     try:
         import kaggle
@@ -71,10 +71,12 @@ def download_kaggle(name, save_dir):
     logging.info(f'Downloading {name} from Kaggle.')
     names = name.split('/')
     if len(names) == 2:  # it's a dataset
-        kaggle.api.dataset_download_files(name, path=save_dir)
-        return save_dir/(names[-1]+'.zip')
+        root_dir /= names[-1]
+        kaggle.api.dataset_download_files(name, path=root_dir)
+        return root_dir/(names[-1]+'.zip')
     # it's a competition
-    kaggle.api.competition_download_files(name, path=save_dir)
+    root_dir /= name
+    kaggle.api.competition_download_files(name, path=root_dir)
     logging.info(f'Done')
-    return save_dir/(name+'.zip')
+    return root_dir/(name+'.zip')
 
