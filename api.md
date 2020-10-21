@@ -8,6 +8,10 @@
    :members:
    :imported-members:
 
+.. automodule:: autodatasets.data_downloader
+   :members:
+   :imported-members:
+
 ```
 
 ## Image Classification
@@ -17,6 +21,8 @@
 
 .. automodule:: autodatasets.image_classification
    :members:
+   :show-inheritance:
+   :inherited-members:
    :imported-members:
 
 ```

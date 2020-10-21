@@ -3,16 +3,22 @@
 # Don't edit it directly
 
 #@save_cell
-from autodatasets import image_classification as task
+from autodatasets.image_classification import Dataset
 
 #@save_cell
-@task.add_dataset
+@Dataset.add
 def boat():
-    return task.dataset_from_folders('kaggle:clorichel/boat-types-recognition', '.')
+    return Dataset.from_folders('kaggle:clorichel/boat-types-recognition', '.')
 
 #@save_cell
-@task.add_dataset
+@Dataset.add
 def intel_image_classification():
-    return task.dataset_from_folders('kaggle:puneet6060/intel-image-classification',
+    return Dataset.from_folders('kaggle:puneet6060/intel-image-classification',
                                      'seg_train/seg_train', 'seg_test/seg_test')
+
+#@save_cell
+@Dataset.add
+def fruits_360():
+    return Dataset.from_folders('kaggle:moltean/fruits',
+                                     'fruits-360/Training', 'fruits-360/Test')
 
