@@ -7,7 +7,7 @@ from .. import base_dataset
 class Dataset(base_dataset.BaseDataset):
     TYPE = 'image_classification'
 
-    def show(self, layout=(2,10), scale=None, max_width=300):
+    def show(self, layout=(2,8), scale=None, max_width=300):
         nrows, ncols = layout
         if not scale: scale = 14 / ncols
         figsize = (ncols * scale, nrows * scale)

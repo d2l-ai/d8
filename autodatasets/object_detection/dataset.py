@@ -2,6 +2,7 @@ import pathlib
 import pandas as pd
 import random
 from matplotlib import pyplot as plt
+import dataclasses
 import collections
 import PIL
 from typing import Union, Tuple, Callable, List, Any, Optional
@@ -13,22 +14,31 @@ import logging
 
 from .. import base_dataset
 
-Label = collections.namedtuple('Label', ['filepath', 'classname', 'xmin', 'ymin', 'xmax', 'ymax'])
+@dataclasses.dataclass
+class Label:
+    filepath: str
+    classname: str
+    xmin: float
+    ymin: float
+    xmax: float
+    ymax: float
 
-def _project_bbox(label):
-    return Label(label.filepath, label.classname, max(0, label.xmin),
-        max(0, label.ymin), min(1.0, label.xmax), min(1.0, label.ymax))
+    def project_bbox(self):
+        self.xmin = max(0, self.xmin)
+        self.ymin = max(0, self.ymin)
+        self.xmax = min(1.0, self.xmax)
+        self.ymax = min(1.0, self.ymax)
 
-def _is_bbox_valid(label):
-    if not (0 <= label.xmin <= 1 and 0 <= label.ymin <= 1 and
-            label.xmin <= label.xmax <= 1 and label.ymin <= label.ymax <= 1):
-        return False
-    return True
+    def is_bbox_valid(self) -> bool:
+        if not (0 <= self.xmin <= 1 and 0 <= self.ymin <= 1 and
+                self.xmin <= self.xmax <= 1 and self.ymin <= self.ymax <= 1):
+            return False
+        return True
 
-def _parse_voc_annotation(xml_fp, image_dir) -> List[Label]:
+def parse_voc_annotation(xml_fp) -> List[Label]:
     root = ET.parse(xml_fp).getroot()
+    filepath = root.find('filename').text.strip()
     size = root.find('size')
-    filepath = pathlib.Path(image_dir)/root.find('filename').text.strip()
     width = float(size.find('width').text)
     height = float(size.find('height').text)
     labels = []
@@ -39,25 +49,29 @@ def _parse_voc_annotation(xml_fp, image_dir) -> List[Label]:
         ymin = float(xml_box.find('ymin').text) / height
         xmax = float(xml_box.find('xmax').text) / width
         ymax = float(xml_box.find('ymax').text) / height
-        label = _project_bbox(Label(str(filepath), classname, xmin, ymin, xmax, ymax))
-        if not _is_bbox_valid(label):
-            logging.warning(f'Invalid {label}')
+        label = Label(filepath, classname, xmin, ymin, xmax, ymax)
+        label.project_bbox()
+        if not label.is_bbox_valid():
+            logging.warning(f'Invalid bounding box {label}')
         else:
             labels.append(label)
     return labels
 
 def _parse_voc(reader, image_dir, annotation_dir):
     entries = []
-    annotation_dir = pathlib.Path(annotation_dir)
-    image_dir = pathlib.Path(image_dir)
-    xmls = [xml for xml in reader.list_files(['.xml']) if xml.parent == annotation_dir]
-    imgs = set([img for img in reader.list_images() if img.parent == image_dir])
+    annotation_dir = str(pathlib.Path(annotation_dir))
+    image_dir = str(pathlib.Path(image_dir))
+    # don't use .is_relative_to as it requires python >= 3.9
+    xmls = [xml for xml in reader.list_files(['.xml'], [annotation_dir])]
+    imgs = set([img for img in reader.list_images([image_dir])])
     for xml in xmls:
-        labels = _parse_voc_annotation(reader.open(xml), image_dir)
+        labels = parse_voc_annotation(reader.open(xml))
         if labels:
-            if not pathlib.Path(labels[0].filepath) in imgs:
-                logging.warning(f'Not found {labels[0].filepath }')
+            image_path = pathlib.Path(image_dir)/labels[0].filepath
+            if image_path not in imgs:
+                logging.warning(f'Not found image {limage_path}')
             else:
+                for l in labels: l.filepath = str(image_path)
                 entries.extend(labels)
     return pd.DataFrame(entries)
 
@@ -78,7 +92,7 @@ class Dataset(base_dataset.BaseDataset):
         for ax, sample in zip(axes.flatten(), samples):
             img = self._reader.read_image(sample[0], max_width=max_width)
             ax.imshow(img, aspect='auto')
-            img_height, img_width, _ = img.shape
+            img_width, img_height = img.size
             ax.axis("off")
             for _, row in sample[1].iterrows():
                 bbox = plt.Rectangle(

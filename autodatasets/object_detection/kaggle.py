@@ -2,7 +2,6 @@
 #    d2lbook build lib
 # Don't edit it directly
 
-#@save_cell
 import pandas as pd 
 from autodatasets.object_detection import Dataset
 

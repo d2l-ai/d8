@@ -8,7 +8,6 @@ import os
 import PIL
 import pandas as pd
 import io
-import numpy as np
 
 class Reader(abc.ABC):
     """The base class of the data reader.
@@ -38,7 +37,7 @@ class Reader(abc.ABC):
         """Returns the total size in bytes."""
         pass
 
-    def list_files(self, extensions: Sequence =[]) -> List[pathlib.Path]:
+    def list_files(self, extensions: Sequence[str] =[], subfolders: Sequence[str] = []) -> List[pathlib.Path]:
         """List all files.
 
         :param extensions: If specified, then only keep files with extensions in this list.
@@ -48,19 +47,21 @@ class Reader(abc.ABC):
         files = [f for f in self._list_all() if not (f.name.endswith('\\') or f.name.endswith('/'))]
         if extensions:
             files = [f for f in files if f.suffix in set(extensions)]
+        if subfolders:
+            files = [f for f in files if any([str(f).startswith(s) for s in subfolders])]
         return files
 
-    def list_images(self) -> List[pathlib.Path]:
+    def list_images(self, subfolders: Sequence[str] = []) -> List[pathlib.Path]:
         """List all image files.
 
         :return: The list of image file paths.
         """
         image_extensions = set(k for k,v in mimetypes.types_map.items() if v.startswith('image/'))
-        return self.list_files(image_extensions)
+        return self.list_files(image_extensions, subfolders)
 
     def read_image(self, filepath: Union[str, pathlib.Path],
                    max_width: Optional[int] = None,
-                   max_height: Optional[int] = None) -> np.ndarray:
+                   max_height: Optional[int] = None):
         """Read an image.
 
         :param filepath: The image filepath.
@@ -77,7 +78,7 @@ class Reader(abc.ABC):
         if ratio > 0:
             # TODO(mli) handle gray images
             img.draft('RGB',(int(img.size[0]/ratio), int(img.size[1]/ratio)))
-        return np.asarray(img)
+        return img
 
     def get_image_info(self, image_paths: Sequence[str]) -> pd.DataFrame:
         """Query image information such as size, width and height.
@@ -104,6 +105,10 @@ def create_reader(root: Union[str, pathlib.Path]) -> Reader:
     :param root: The root path, it must exists.
     :return: The created data reader
     """
+    if isinstance(root, list) or isinstance(root, tuple):
+        if len(root) == 1:
+            return create_reader(root[0])
+        return MultiReader(root)
     root = pathlib.Path(root)
     # if root.is_dir():
     #     return DirReader(root)
@@ -140,3 +145,29 @@ class ZipReader(Reader):
 
 # class TarReader(Reader):
 #     pass
+
+class MultiReader(Reader):
+    """Reading multiple roots at the same time."""
+    def __init__(self, roots: Union[Sequence[pathlib.Path], Sequence[str]]):
+        self._readers = dict()
+        for root in roots:
+            root = pathlib.Path(root)
+            self._readers[root.with_suffix('').name] = create_reader(root)
+
+    def open(self, path: Union[str, pathlib.Path]):
+        path = pathlib.Path(path)
+        base = path.parents[len(path.parents)-2]
+        if base.name not in self._readers:
+            raise ValueError(f'The top-level path {base.name} should in {self._readers.keys()}')
+        return self._readers[base.name].open(path.relative_to(base))
+
+    def _list_all(self) -> List[pathlib.Path]:
+        rets = []
+        for name, reader in self._readers.items():
+            for p in reader._list_all():
+                rets.append(name/p)
+        return rets
+
+    @property
+    def size(self) -> int:
+        return sum([reader.size for reader in self._readers.values()])

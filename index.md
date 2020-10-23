@@ -59,8 +59,9 @@ Dataset.summary_all()
 ```{.python .input}
 from autodatasets.object_detection import Dataset
 
-Dataset.add('paperprototype', Dataset.from_voc, ['https://arcraftimages.s3-accelerate.amazonaws.com/Datasets/paperprototype/paperprototypePascalVOC.zip',
-                            'images', 'annotations'])
+Dataset.add('paperprototype', Dataset.from_voc, 
+            ['https://arcraftimages.s3-accelerate.amazonaws.com/Datasets/paperprototype/paperprototypePascalVOC.zip',
+             'images', 'annotations'])
 Dataset.get('paperprototype').show()
 ```
 

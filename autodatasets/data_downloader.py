@@ -45,8 +45,8 @@ def current_name():
     return _current_name_context.get().name
 
 def download(url: str,
-             save_dir: Optional[Union[str, pathlib.Path]] = None,
-             root_dir='') -> pathlib.Path:
+             save_dir: Optional[Union[str, pathlib.Path]] = None
+             ) -> pathlib.Path:
     """Download a URL.
 
     Download the URL into the ``DATAROOT/save_dir`` folder, where ``DATAROOT`` is the ``.autodatasets`` folder on the home directory, and return the saved file path.
@@ -70,6 +70,8 @@ def download(url: str,
     :param save_dir: The directory to save the file, the default value is :py:func:`current_name`
     :return: The downloaded file path
     """
+    # if isinstance(url, list) or isinstance(url, tuple):
+    #     return [download(u, save_dir) for u in url]
     if save_dir is None: save_dir = current_name()
     if url.startswith('kaggle:'):
         return _download_kaggle(url[7:], save_dir)
