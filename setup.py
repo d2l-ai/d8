@@ -2,7 +2,8 @@ from setuptools import setup, find_packages
 
 requirements = [
     'kaggle',
-    'pandas'
+    'pandas>=1.1.0',
+    'tqdm',
 ]
 
 setup(
@@ -18,7 +19,7 @@ setup(
     zip_safe=True,
     install_requires=requirements,
     include_package_data=True,
-    package_data={'autodatasets':['datasets.csv', 'meta.csv', ]},
+    package_data={'autodatasets':[]},
     entry_points={
         'console_scripts': [
             'autodatasets = autodatasets.main:main',

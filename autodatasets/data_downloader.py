@@ -6,6 +6,7 @@ import tqdm
 import os
 import contextvars
 from typing import Optional, Union
+from . import data_reader
 
 DATAROOT = pathlib.Path.home()/'.autodatasets'
 
@@ -45,7 +46,8 @@ def current_name():
     return _current_name_context.get().name
 
 def download(url: str,
-             save_dir: Optional[Union[str, pathlib.Path]] = None
+             save_dir: Optional[Union[str, pathlib.Path]] = None,
+             extract: bool = False
              ) -> pathlib.Path:
     """Download a URL.
 
@@ -74,10 +76,34 @@ def download(url: str,
     #     return [download(u, save_dir) for u in url]
     if save_dir is None: save_dir = current_name()
     if url.startswith('kaggle:'):
-        return _download_kaggle(url[7:], save_dir)
-    save_filepath = DATAROOT/save_dir/url.split('/')[-1]
-    _download_url(url, save_filepath)
+        save_filepath =  _download_kaggle(url[7:], save_dir)
+    else:
+        save_filepath = DATAROOT/save_dir/url.split('/')[-1]
+        _download_url(url, save_filepath)
+    if extract:
+        return extract_file(save_filepath)
     return save_filepath
+
+def extract_file(filepath, save_folder=None):
+    filepath = pathlib.Path(filepath)
+    if save_folder is None:
+        save_folder = filepath.parent
+    else:
+        save_folder = pathlib.Path(save_folder)
+    if filepath.suffix not in ['.zip', '.tar', '.gz', '.tgz']:
+        return filepath
+    reader = data_reader.create_reader(filepath)
+    compressed_files = set(reader.list_files())
+    existed_files = set(data_reader.create_reader(save_folder).list_files())
+    uncompressed_files = compressed_files.difference(existed_files)
+    if len(uncompressed_files):
+        logging.info(f'Extracting {str(filepath)} to {str(save_folder.resolve())}')
+        for p in tqdm.tqdm(uncompressed_files):
+            out = save_folder / p
+            if not out.parent.exists(): out.parent.mkdir(parents=True)
+            with out.open('wb') as f:
+                f.write(reader.open(p).read())
+    return save_folder
 
 def _download_kaggle(name: str, save_dir):
     """Download the dataset from Kaggle and return path of the zip file."""
@@ -92,16 +118,30 @@ def _download_kaggle(name: str, save_dir):
     names = name.split('/')
     path = DATAROOT/save_dir
     if len(names) == 2:  # it's a dataset
-        filepath = path/(names[-1]+'.zip')
-        if not filepath.exists():
-            logging.info(f'Downloading Kaggle dataset {name} into {str(path)}, it may take a while.')
-        kaggle.api.dataset_download_files(name, path=path)
+        files = names[1].split(':')
+        if len(files) == 2:
+            filepath = path/files[1]
+            if not filepath.exists():
+                logging.info(f'Downloading {files[1]} form Kaggle dataset {names[0]}/{files[0]} into {str(path)}.')
+            kaggle.api.dataset_download_file(name, files[1], path)
+        else:
+            filepath = path/(names[-1]+'.zip')
+            if not filepath.exists():
+                logging.info(f'Downloading Kaggle dataset {name} into {str(path)}.')
+            kaggle.api.dataset_download_files(name, path)
         return filepath
     # it's a competition
-    filepath = path/(name+'.zip')
-    if not filepath.exists():
-        logging.info(f'Downloading Kaggle competition {name} into {str(path)}, it may take a while.')
-    kaggle.api.competition_download_files(name, path=path)
+    files = name.split(':')
+    if len(files) == 2:
+        filepath = path/files[1]
+        if not filepath.exists():
+            logging.info(f'Downloading {files[1]} from Kaggle competition {files[0]} into {str(path)}.')
+        kaggle.api.competition_download_file(files[0], files[1], path)
+    else:
+        filepath = path/(name+'.zip')
+        if not filepath.exists():
+            logging.info(f'Downloading Kaggle competition {name} into {str(path)}.')
+        kaggle.api.competition_download_files(name, path)
     return filepath
 
 
@@ -145,4 +185,3 @@ def _download_url(url: str, save_filepath: pathlib.Path, overwrite=False):
         sha1_hash = _get_sha1(save_filepath)
         with sha1_filepath.open('w') as f:
             f.write(sha1_hash+'\n')
-

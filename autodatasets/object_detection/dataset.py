@@ -75,8 +75,7 @@ def _parse_voc(reader, image_dir, annotation_dir):
                 entries.extend(labels)
     return pd.DataFrame(entries)
 
-
-class Dataset(base_dataset.BaseDataset):
+class Dataset(base_dataset.ClassificationDatatset):
     TYPE = 'object_detection'
 
     def show(self, layout=(2,4), scale=None, max_width=500):
@@ -85,12 +84,11 @@ class Dataset(base_dataset.BaseDataset):
         figsize = (ncols * scale, nrows * scale)
         _, axes = plt.subplots(nrows, ncols, figsize=figsize)
         random.seed(0)
-        samples = random.sample(list(self._train_df.groupby('filepath')), nrows*ncols)
-        classes = list(self._train_df['classname'].unique())
+        samples = random.sample(list(self.df.groupby('filepath')), nrows*ncols)
         colors = ['b', 'g', 'r', 'm', 'c']
-        class_to_color = {c:colors[i%len(colors)] for i, c in enumerate(classes)}
+        class_to_color = {c:colors[i%len(colors)] for i, c in enumerate(self.classes)}
         for ax, sample in zip(axes.flatten(), samples):
-            img = self._reader.read_image(sample[0], max_width=max_width)
+            img = self.reader.read_image(sample[0], max_width=max_width)
             ax.imshow(img, aspect='auto')
             img_width, img_height = img.size
             ax.axis("off")
@@ -107,39 +105,37 @@ class Dataset(base_dataset.BaseDataset):
                                 lw=0, alpha=1, pad=2))
 
     def summary(self):
-        dfs = self.get_dfs()
+        path = self._get_summary_path()
+        if path and path.exists(): return pd.read_pickle(path)
         get_mean_std = lambda col: f'{col.mean():.1f} ± {col.std():.1f}'
-        summary = []
-        for lbl_df in dfs.values():
-            img_df = self._reader.get_image_info(lbl_df['filepath'])
-            merged_df = pd.merge(lbl_df, img_df, on='filepath')
-            summary.append({'# images':len(img_df),
-                    '# bboxes':len(lbl_df),
-                    '# classes':lbl_df['classname'].nunique(),
-                    'image width':get_mean_std(img_df['width']),
-                    'image height':get_mean_std(img_df['height']),
-                    'bbox width':get_mean_std((merged_df['xmax']-merged_df['xmin'])*merged_df['width']),
-                    'bbox height':get_mean_std((merged_df['ymax']-merged_df['ymin'])*merged_df['height']),
-                    'size (GB)':img_df['size (KB)'].sum()/2**20,
-                })
-        return pd.DataFrame(summary, index=dfs.keys())
+        img_df = self.reader.get_image_info(self.df['filepath'])
+        merged_df = pd.merge(self.df, img_df, on='filepath')
+        summary = pd.DataFrame([{'# images':len(img_df),
+                                 '# bboxes':len(self.df),
+                                 '# classes':len(self.classes),
+                                 'image width':get_mean_std(img_df['width']),
+                                 'image height':get_mean_std(img_df['height']),
+                                 'bbox width':get_mean_std((merged_df['xmax']-merged_df['xmin'])*merged_df['width']),
+                                 'bbox height':get_mean_std((merged_df['ymax']-merged_df['ymin'])*merged_df['height']),
+                                 'size (GB)':img_df['size (KB)'].sum()/2**20}])
+        if path and path.parent.exists(): summary.to_pickle(path)
+        return summary
 
     @classmethod
     def from_voc(cls, datapath: str,
-                 train_image_dir: str = None, train_annotation_dir: str = None,
-                 valid_image_dir: str = None, valid_annotation_dir: str = None,
-                 test_image_dir: str = None, test_annotation_dir: str = None):
-        def get_df_func(image_dir, annotation_dir):
-            if image_dir is None or annotation_dir is None:
-                return None
-            return lambda reader: _parse_voc(reader, image_dir, annotation_dir)
-        return cls.from_df_func(
-            datapath,
-            get_df_func(train_image_dir, train_annotation_dir),
-            get_df_func(valid_image_dir, valid_annotation_dir),
-            get_df_func(test_image_dir, test_annotation_dir))
+                 image_folders: str, annotation_folders: str):
+        listify = lambda x: x if isinstance(x, (tuple, list)) else [x]
+
+        def get_df_func(image_folders, annotation_folders):
+            def df_func(reader):
+                dfs = []
+                for image_folder, annotation_folder in zip(image_folders, annotation_folders):
+                    dfs.append(_parse_voc(reader, image_folder, annotation_folder))
+                return pd.concat(dfs, axis=0)
+            return df_func
+        return cls.from_df_func(datapath, get_df_func(listify(image_folders), listify(annotation_folders)))
 
     @classmethod
-    def summary_all(cls):
-        df = super().summary_all()
+    def summary_all(cls, quick=False):
+        df = super().summary_all(quick)
         return df.sort_values('# images')

@@ -51,7 +51,7 @@ You can check more examples to construct image classification datasets at :ref:`
 A set of build-in datasets.
 
 ```{.python .input}
-Dataset.summary_all()
+Dataset.summary_all(quick=True)
 ```
 
 ## Object Detection
@@ -59,25 +59,30 @@ Dataset.summary_all()
 ```{.python .input}
 from autodatasets.object_detection import Dataset
 
-Dataset.add('paperprototype', Dataset.from_voc, 
-            ['https://arcraftimages.s3-accelerate.amazonaws.com/Datasets/paperprototype/paperprototypePascalVOC.zip',
+Dataset.add('paper-prototype', Dataset.from_voc,
+            ['https://arcraftimages.s3-accelerate.amazonaws.com/Datasets/PaperPrototype/PaperPrototypePascalVOC.zip',
              'images', 'annotations'])
-Dataset.get('paperprototype').show()
+Dataset.get('paper-prototype').show()
 ```
 
 ```{.python .input}
-Dataset.summary_all()
+Dataset.summary_all(quick=True)
 ```
 
 You can check :ref:`sec_object_detection` for detailed information and building your own datasets.
 
 ```toc
+:maxdepth: 2
+
 image_classification/index
 object_detection/index
+benchmark/index
 ```
 
 
 ```toc
+:maxdepth: 2
+
 api
 ```
 

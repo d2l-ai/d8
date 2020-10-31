@@ -10,21 +10,21 @@ from IPython import display
 display.set_matplotlib_formats('svg')
 ```
 
-```{.python .input  n=2}
+```{.python .input  n=1}
 #@save
 from autodatasets.object_detection import Dataset
 ```
 
 ## Makeml
 
-```{.python .input  n=3}
+```{.python .input  n=2}
 #@save_cell
 def make_ml(name):
     camel_case = name.replace('-',' ').title().replace(' ', '')
     url = f'https://arcraftimages.s3-accelerate.amazonaws.com/Datasets/{camel_case}/{camel_case}PascalVOC.zip'
     return Dataset.from_voc(url, 'images', 'annotations')
 
-names = ['sheep', 'paperprototype', 'raccoon', 'boggle-boards', 'plant-doc', 
+names = ['sheep', 'paper-prototype', 'raccoon', 'boggle-boards', 'plant-doc', 
          'hard-hat-workers', 'pistol', 'cars-and-traffic-signs', 'tomato', 
          'dice', 'potholes', 'ships', 'mask', 'chess', 'mobile-phones', 
          'glasses', 'road-signs', 'fruits', 'bikes', 'headphones', 'fish',
@@ -36,7 +36,7 @@ for name in names:
     Dataset.add(name, make_ml, [name])
 ```
 
-```{.python .input  n=4}
+```{.python .input  n=3}
 ds = Dataset.get('sheep')
 ds.show()
 ds.summary()

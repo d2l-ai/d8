@@ -1,2 +1,4 @@
 from .dataset import *
-from . import kaggle
+
+from .from_folders import *
+from .from_label_func import *

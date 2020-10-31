@@ -8,6 +8,10 @@ import os
 import PIL
 import pandas as pd
 import io
+import glob
+
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class Reader(abc.ABC):
     """The base class of the data reader.
@@ -15,6 +19,7 @@ class Reader(abc.ABC):
     :param root: The root path.
     """
     def __init__(self, root: pathlib.Path):
+        root = pathlib.Path(root)
         if not root.exists():
             raise NameError(f'{root} doesn\'t exists')
         self._root = root
@@ -32,11 +37,6 @@ class Reader(abc.ABC):
     def _list_all(self) -> List[pathlib.Path]:
         pass
 
-    @abc.abstractproperty
-    def size(self) -> int:
-        """Returns the total size in bytes."""
-        pass
-
     def list_files(self, extensions: Sequence[str] =[], subfolders: Sequence[str] = []) -> List[pathlib.Path]:
         """List all files.
 
@@ -44,9 +44,9 @@ class Reader(abc.ABC):
         :return: The list of file paths.
         """
         # remove folders
-        files = [f for f in self._list_all() if not (f.name.endswith('\\') or f.name.endswith('/'))]
+        files = self._list_all()
         if extensions:
-            files = [f for f in files if f.suffix in set(extensions)]
+            files = [f for f in files if f.suffix.lower() in set(extensions)]
         if subfolders:
             files = [f for f in files if any([str(f).startswith(s) for s in subfolders])]
         return files
@@ -72,6 +72,7 @@ class Reader(abc.ABC):
         :return: The image as a numpy array.
         """
         img = PIL.Image.open(self.open(filepath))
+        if img.mode != 'RGB': img = img.convert('RGB')
         ratio = 0
         if max_width: ratio = max(ratio, img.size[0] / max_width)
         if max_height: ratio = max(ratio, img.size[1] / max_height)
@@ -105,20 +106,35 @@ def create_reader(root: Union[str, pathlib.Path]) -> Reader:
     :param root: The root path, it must exists.
     :return: The created data reader
     """
-    if isinstance(root, list) or isinstance(root, tuple):
+    if isinstance(root, (tuple, list)):
         if len(root) == 1:
             return create_reader(root[0])
         return MultiReader(root)
-    root = pathlib.Path(root)
-    # if root.is_dir():
-    #     return DirReader(root)
+    roots = list(glob.glob(str(root)))
+    if len(roots) == 0:
+        raise ValueError('Not found {root}')
+    if len(roots) > 1:
+        return create_reader(roots)
+    root = pathlib.Path(roots[0])
+    if root.is_dir():
+        return FolderReader(root)
     if root.suffix == '.zip':
         return ZipReader(root)
-    # if root.suffix == '.tar':
-    #     return TarReader(root)
-    raise NameError(f'Not support {root}')
+    if root.suffix in ['.tar', '.tgz', '.gz']:
+        return TarReader(root)
+    raise ValueError(f'Not support {root}')
 
+class FolderReader(Reader):
+    def __init__(self, root: pathlib.Path):
+        super().__init__(root)
 
+    def open(self, path: Union[str, pathlib.Path]):
+        return (self._root/path).open('rb')
+
+    def _list_all(self):
+        return [p.relative_to(self._root) for p in self._root.glob('**/*') if not p.is_dir()]
+
+# Note that zip reader doesn't support multiprocess https://bugs.python.org/issue39363
 class ZipReader(Reader):
     """A data reader to read from a zip file.
 
@@ -128,23 +144,28 @@ class ZipReader(Reader):
         super().__init__(root)
         self._root_fp = zipfile.ZipFile(self._root, 'r')
 
-    @property
-    def size(self):
-        return self._root.stat().st_size
-
     def open(self, path: Union[str, pathlib.Path]):
         return self._root_fp.open(str(path))
 
     def _list_all(self):
         filenames = [file.filename for file in self._root_fp.infolist()
-                     if not '__MACOSX' in file.filename]
+                     if not '__MACOSX' in file.filename and not file.is_dir()]
         return [pathlib.Path(fn) for fn in filenames]
 
-# class DirReader(Reader):
-#     pass
+class TarReader(Reader):
+    """A data reader to read from a tar file.
 
-# class TarReader(Reader):
-#     pass
+    :param root: The root path.
+    """
+    def __init__(self, root: pathlib.Path):
+        super().__init__(root)
+        self._root_fp = tarfile.open(self._root, 'r')
+
+    def open(self, path: Union[str, pathlib.Path]):
+        return self._root_fp.open(str(path))
+
+    def _list_all(self):
+        return [pathlib.Path(fn) for fn in self._root_fp.getmembers()]
 
 class MultiReader(Reader):
     """Reading multiple roots at the same time."""
@@ -167,7 +188,3 @@ class MultiReader(Reader):
             for p in reader._list_all():
                 rets.append(name/p)
         return rets
-
-    @property
-    def size(self) -> int:
-        return sum([reader.size for reader in self._readers.values()])

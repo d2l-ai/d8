@@ -2,7 +2,6 @@
 :label:`sec_image_classification`
 
 ```toc
-kaggle
 from_folders
+from_label_func
 ```
-
