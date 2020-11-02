@@ -42,6 +42,7 @@ class Dataset(base_dataset.ClassificationDatatset):
             def __init__(self, dataset):
                 self.data = dataset
                 self.label_to_idx = {n:i for i, n in enumerate(self.data.classes)}
+                self.classes = dataset.classes
 
             def __getitem__(self, idx):
                 filepath = self.data.df['filepath'][idx]
