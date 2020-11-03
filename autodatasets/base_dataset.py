@@ -21,6 +21,9 @@ class BaseDataset(object):
     TYPE = ''
     _DATASETS = dict()
 
+    def __len__(self) -> int:
+        return len(self.df) if self.df is not None else 0
+
     def split(self, frac: float, shuffle: bool=True):
         """Split a dataset into two.
         """
