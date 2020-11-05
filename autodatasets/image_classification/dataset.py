@@ -3,10 +3,11 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from typing import Union, Sequence, Callable
 import fnmatch
+import numpy as np
 
 from .. import base_dataset
 
-class Dataset(base_dataset.ClassificationDatatset):
+class Dataset(base_dataset.ClassificationDataset):
     TYPE = 'image_classification'
 
     def show(self, layout=(2,8), scale=None, max_width=300):
@@ -33,6 +34,13 @@ class Dataset(base_dataset.ClassificationDatatset):
                                  'size (GB)':img_df['size (KB)'].sum()/2**20,}])
         if path and path.parent.exists(): summary.to_pickle(path)
         return summary
+
+    def __getitem__(self, idx):
+        if idx < 0 or idx > self.__len__():
+            raise IndexError(f'index {idx} out of range [0, {self.__len__()})')
+        filepath = self.df['filepath'][idx]
+        img = self.reader.read_image(filepath)
+        return np.array(img), self.df['classname'][idx]
 
     def to_mxnet(self):
         """Returns a MXNet dataset instance"""

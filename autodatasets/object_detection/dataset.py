@@ -75,7 +75,7 @@ def _parse_voc(reader, image_dir, annotation_dir):
                 entries.extend(labels)
     return pd.DataFrame(entries)
 
-class Dataset(base_dataset.ClassificationDatatset):
+class Dataset(base_dataset.ClassificationDataset):
     TYPE = 'object_detection'
 
     def show(self, layout=(2,4), scale=None, max_width=500):

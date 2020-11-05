@@ -2,6 +2,9 @@
 :label:`sec_image_classification`
 
 ```toc
-from_folders
-from_label_func
+getting_started
+use_cases/index
+constructing
+built_in/index
 ```
+
