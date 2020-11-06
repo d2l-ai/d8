@@ -2,7 +2,7 @@
 
 `autodatasets` is a Python package to allow you to use your own datasets in various
 machine learning frameworks by a few lines of Python codes. It also provides
-hundreds of build-in datasets with a great of diversity to your machine learning algorithms.
+hundreds of build-in datasets with a great of diversity to test your machine learning algorithms.
 
 ## Installation
 
@@ -21,13 +21,23 @@ the problem type you are interested.
 
 ```eval_rst
 
+.. |nbsp| unicode:: 0xA0
+   :trim:
+
 .. container:: cards
 
     .. card::
         :title: Image Classification
         :link: image_classification/getting_started.html
 
-        Datasets to recognize an object in an image.
+        Datasets to recognize an object in an image. |nbsp|
+        |nbsp|  |nbsp| |nbsp| |nbsp| |nbsp| |nbsp|
+        |nbsp| |nbsp| |nbsp| |nbsp| |nbsp| |nbsp| |nbsp|
+        |nbsp| |nbsp| |nbsp| |nbsp| |nbsp| |nbsp| |nbsp|
+
+
+
+
 
     .. card::
         :title: Object Detection
@@ -47,26 +57,3 @@ image_classification/index
 object_detection/index
 api/index
 ```
-
-## Old
-This package provides a list of build-in datasets, and allow users to load a raw dataset with a few lines of python codes.
-
-
-## Object Detection
-
-```{.python .input}
-from autodatasets.object_detection import Dataset
-
-Dataset.add('paper-prototype', Dataset.from_voc,
-            ['https://arcraftimages.s3-accelerate.amazonaws.com/Datasets/PaperPrototype/PaperPrototypePascalVOC.zip',
-             'images', 'annotations'])
-Dataset.get('paper-prototype').show()
-```
-
-```{.python .input}
-Dataset.summary_all(quick=True)
-```
-
-You can check :ref:`sec_object_detection` for detailed information and building your own datasets.
-
-

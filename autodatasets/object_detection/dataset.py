@@ -108,10 +108,11 @@ class Dataset(base_dataset.ClassificationDataset):
         path = self._get_summary_path()
         if path and path.exists(): return pd.read_pickle(path)
         get_mean_std = lambda col: f'{col.mean():.1f} ± {col.std():.1f}'
-        img_df = self.reader.get_image_info(self.df['filepath'])
+        img_df = self.reader.get_image_info(self.df['filepath'].unique())
         merged_df = pd.merge(self.df, img_df, on='filepath')
         summary = pd.DataFrame([{'# images':len(img_df),
                                  '# bboxes':len(self.df),
+                                 '# bboxes / image':get_mean_std(self.df.groupby('filepath')['filepath'].count()),
                                  '# classes':len(self.classes),
                                  'image width':get_mean_std(img_df['width']),
                                  'image height':get_mean_std(img_df['height']),

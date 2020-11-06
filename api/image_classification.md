@@ -11,7 +11,21 @@ The dataset class for image classification is provided in the `autodatasets.imag
 
 ```
 
-## Dataset Construction
+## Adding and Getting Datasets
+
+`autodatasets` provides a large set of build-in dataset, the following functions list, add and get these datasts.
+
+```eval_rst
+
+.. autosummary::
+
+   Dataset.list
+   Dataset.get
+   Dataset.add
+
+```
+
+## Constructing a Dataset
 
 We often construct a new dataset using one of the following class methods.
 You could find examples from :ref:`sec_image_classification`.
@@ -27,7 +41,7 @@ You could find examples from :ref:`sec_image_classification`.
 ```
 
 
-## Dataset Manipulation
+## Manipulating a Dataset
 
 These functions manipulate a dataset.
 
@@ -39,21 +53,8 @@ These functions manipulate a dataset.
 
 ```
 
-## Adding and Getting Datasets
 
-`autodatasets` provides a large set of build-in dataset, the following functions list, add and get these datasts.
-
-```eval_rst
-
-.. autosummary::
-
-   Dataset.list
-   Dataset.get
-   Dataset.add
-
-```
-
-## Visualization
+## Visualizing a Dataset
 
 These functions let you have a peak about a dataset.
 
@@ -80,7 +81,7 @@ These functions export a `autodatasets` dataset into dataset formats for various
 ```
 
 
-## xx
+## `Dataset`
 
 ```eval_rst
 
