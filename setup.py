@@ -5,6 +5,9 @@ requirements = [
     'kaggle',
     'pandas>=1.1.0',
     'tqdm',
+    'xxhash',
+    'dataclasses;python_version<"3.7"',
+    'pillow'
 ]
 
 
@@ -17,7 +20,7 @@ with _libinfo_py.open('r') as f:
 setup(
     name='d8',
     version=__version__,
-    python_requires='>=3.5',
+    python_requires='>=3.6',
     author='',
     author_email='',
     url='',
@@ -31,7 +34,6 @@ setup(
     entry_points={
         'console_scripts': [
             'd8 = d8.main:main',
-            'ad = d8.main:main'
         ]
     },
 )

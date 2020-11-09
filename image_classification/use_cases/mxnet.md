@@ -169,23 +169,23 @@ def search(hp, result_file=result_file):
         pickle.dump(results, result_file.open('wb'))
 
 hp = HP()
-search(hp)
+# search(hp)
 ```
 
 ```{.python .input}
 import pandas as pd
 pd.set_option('precision', 2)
 
-results = pickle.load(result_file.open('rb'))
-names = Dataset.list()
-best_results = {}
-for name in names:
-    for val in results.values():
-        if name in val:
-            if (name not in best_results or
-                best_results[name]['valid_acc'] < val[name]['valid_acc']):
-                best_results[name] = val[name]
-res_df = pd.DataFrame([best_results[name] for name in names], index=names)
-summary = Dataset.summary_all(quick=True)
-pd.merge(summary, res_df, left_index=True, right_index=True)
+# results = pickle.load(result_file.open('rb'))
+# names = Dataset.list()
+# best_results = {}
+# for name in names:
+#     for val in results.values():
+#         if name in val:
+#             if (name not in best_results or
+#                 best_results[name]['valid_acc'] < val[name]['valid_acc']):
+#                 best_results[name] = val[name]
+# res_df = pd.DataFrame([best_results[name] for name in names], index=names)
+# summary = Dataset.summary_all(quick=True)
+# pd.merge(summary, res_df, left_index=True, right_index=True)
 ```

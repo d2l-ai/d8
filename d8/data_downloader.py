@@ -1,6 +1,6 @@
 import logging
 import pathlib
-import hashlib
+import xxhash
 import requests
 import tqdm
 import os
@@ -145,25 +145,45 @@ def _download_kaggle(name: str, save_dir):
     return filepath
 
 
-# TODO(mli) only check the first 1GB data for big datasets
-def _get_sha1(filepath: pathlib.Path):
+# # TODO(mli) only check the first 1GB data for big datasets
+# def _get_sha1(filepath: pathlib.Path):
+#     if not filepath.exists():
+#         return None
+#     sha1 = hashlib.sha1()
+#     with filepath.open('rb') as f:
+#         while True:
+#             data = f.read(2**20)
+#             if not data:
+#                 break
+#             sha1.update(data)
+#     return sha1.hexdigest()
+
+def _get_xxhash(filepath: pathlib.Path):
     if not filepath.exists():
         return None
-    sha1 = hashlib.sha1()
+    n = filepath.stat().st_size
+    x = xxhash.xxh128()
+    m = 2 ** 23  # read 8MB each time
     with filepath.open('rb') as f:
-        while True:
-            data = f.read(2**20)
-            if not data:
-                break
-            sha1.update(data)
-    return sha1.hexdigest()
+        if n < m * 128: # <= 1GB, check the whole data
+            while True:
+                data = f.read(m)
+                if not data: break
+                x.update(data)
+        else:
+            for _ in range(64):  # check the first 0.5GB
+                x.update(f.read(m))
+            f.seek(-64*m, 2)
+            for _ in range(64):  # check the last 0.5GB
+                x.update(f.read(m))
+    return x.hexdigest()
 
 def _download_url(url: str, save_filepath: pathlib.Path, overwrite=False):
-    sha1_filepath = pathlib.Path(str(save_filepath)+'.sha1')
-    if sha1_filepath.exists() and save_filepath.exists() and not overwrite:
-        with sha1_filepath.open('r') as f:
-            sha1_hash = f.read().strip()
-            if sha1_hash == _get_sha1(save_filepath):
+    hash_filepath = pathlib.Path(str(save_filepath)+'.xxh')
+    if hash_filepath.exists() and save_filepath.exists() and not overwrite:
+        with hash_filepath.open('r') as f:
+            saved_hash = f.read().strip()
+            if saved_hash == _get_xxhash(save_filepath):
                 logging.debug(f'Found valid cache at {save_filepath}. Skip downloading.')
                 return
     logging.info(f'Downloading {url} into {save_filepath.parent}')
@@ -182,6 +202,6 @@ def _download_url(url: str, save_filepath: pathlib.Path, overwrite=False):
     if progress_bar.n != total_size_in_bytes:
         logging.error(f'Only {progress_bar.n} bytes out of {total_size_in_bytes} bytes are downloaded.')
     else:
-        sha1_hash = _get_sha1(save_filepath)
-        with sha1_filepath.open('w') as f:
-            f.write(sha1_hash+'\n')
+        hash_value = _get_xxhash(save_filepath)
+        with hash_filepath.open('w') as f:
+            f.write(hash_value+'\n')
