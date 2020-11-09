@@ -1,7 +1,3 @@
 # d8
 
-## Design Principals
-
-1. Only need a few lines of python codes to add a dataset, read the raw dataset directly without format converting.
-1. Read the compressed files (zip, tar.gz) directly without extracting to save both disk and loading time.
-
+`d8` is a Python package to allow you to use your own datasets in various machine learning frameworks by a few lines of Python codes. It also provides hundreds of build-in datasets with a great of diversity to test your machine learning algorithms.
