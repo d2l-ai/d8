@@ -6,6 +6,8 @@ requirements = [
     'pandas>=1.1.0',
     'tqdm',
     'xxhash',
+    'matplotlib',
+    'numpy',
     'dataclasses;python_version<"3.7"',
     'pillow'
 ]
