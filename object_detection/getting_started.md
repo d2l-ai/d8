@@ -13,7 +13,7 @@ display.set_matplotlib_formats('svg')
 pd.set_option('precision', 2)
 ```
 
-This tutorial explains how to get a built-in image classification datasets and how to construct a customized one. 
+This tutorial explains how to get a built-in image classification datasets and how to construct a customized one.
 
 ## Getting a Built-in Dataset
 
@@ -28,7 +28,7 @@ You can see that it must contain 6 columns ...
 Next, here is a list of examples how to prepare various detection datasets,mm
 
 ```{.python .input}
-from autodatasets.object_detection import Dataset
+from d8.object_detection import Dataset
 
 names = Dataset.list()
 len(names), names[:5]

@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+import pathlib
 
 requirements = [
     'kaggle',
@@ -6,9 +7,16 @@ requirements = [
     'tqdm',
 ]
 
+
+_libinfo_py = pathlib.Path(__file__).parent/'d8/__init__.py'
+with _libinfo_py.open('r') as f:
+    for l in f.readlines():
+        if '__version__' in l:
+            __version__ = l.split('"')[1]
+
 setup(
-    name='autodatasets',
-    version='0.0.1',
+    name='d8',
+    version=__version__,
     python_requires='>=3.5',
     author='',
     author_email='',
@@ -19,11 +27,11 @@ setup(
     zip_safe=True,
     install_requires=requirements,
     include_package_data=True,
-    package_data={'autodatasets':[]},
+    package_data={'d8':[]},
     entry_points={
         'console_scripts': [
-            'autodatasets = autodatasets.main:main',
-            'ad = autodatasets.main:main'
+            'd8 = d8.main:main',
+            'ad = d8.main:main'
         ]
     },
 )

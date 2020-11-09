@@ -12,7 +12,7 @@ import pandas as pd
 display.set_matplotlib_formats('svg')
 pd.set_option('precision', 2)
 
-from autodatasets.image_classification import Dataset
+from d8.image_classification import Dataset
 ```
 
 Summary about this dataset.

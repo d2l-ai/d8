@@ -9,7 +9,7 @@ message = '''
 # DO NOT EDIT THIS NOTEBOOK.
 
 # This notebook is automatically generated from the `template` notebook in this
-# folder by running `autodatasets gen_desc`
+# folder by running `d8 gen_desc`
 ```
 '''
 
@@ -21,7 +21,7 @@ def generate(task_type: str):
         return
     with template.open('r') as f:
         lines = f.readlines()
-    mod = importlib.import_module('autodatasets.'+task_type)
+    mod = importlib.import_module('d8.'+task_type)
     names = mod.Dataset.list()
     for name in names:
         tgt = dir/(name+'.md')

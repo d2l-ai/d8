@@ -1,16 +1,16 @@
-# The `autodatasets` Package
+# The `d8` Package
 
-`autodatasets` is a Python package to allow you to use your own datasets in various
+`d8` is a Python package to allow you to use your own datasets in various
 machine learning frameworks by a few lines of Python codes. It also provides
 hundreds of build-in datasets with a great of diversity to test your machine learning algorithms.
 
 ## Installation
 
-`autodatasets` is a light-weight python package. The easiest way to install it is through `pip`
+`d8` is a light-weight python package. The easiest way to install it is through `pip`
 
 
 ```bash
-pip install autodatasets
+pip install d8
 ```
 
 

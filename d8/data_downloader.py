@@ -8,7 +8,7 @@ import contextvars
 from typing import Optional, Union
 from . import data_reader
 
-DATAROOT = pathlib.Path.home()/'.autodatasets'
+DATAROOT = pathlib.Path.home()/'.d8'
 
 class NameContext():
     """The context for dataset name.
@@ -51,22 +51,22 @@ def download(url: str,
              ) -> pathlib.Path:
     """Download a URL.
 
-    Download the URL into the ``DATAROOT/save_dir`` folder, where ``DATAROOT`` is the ``.autodatasets`` folder on the home directory, and return the saved file path.
+    Download the URL into the ``DATAROOT/save_dir`` folder, where ``DATAROOT`` is the ``.d8`` folder on the home directory, and return the saved file path.
 
-    >>> download('https://autodatasets.github.io/docs/index.html')
-    PosixPath('/home/ubuntu/.autodatasets/index.html')
+    >>> download('https://d8.github.io/docs/index.html')
+    PosixPath('/home/ubuntu/.d8/index.html')
 
     After data is download, it will compute and save the data sha1sum. If next time we save data into the same local path, and neither previous downloaded data and saved .sha1 file is changed, then we will skip the download. In best practice, we can download URLs into different folders
 
-    >>> download('https://autodatasets.github.io/docs/index.html', 'root')
-    PosixPath('/home/ubuntu/.autodatasets/root/index.html')
-    >>> download('https://autodatasets.github.io/docs/object_detection/index.html', 'detection')
-    PosixPath('/home/ubuntu/.autodatasets/detection/index.html')
+    >>> download('https://d8.github.io/docs/index.html', 'root')
+    PosixPath('/home/ubuntu/.d8/root/index.html')
+    >>> download('https://d8.github.io/docs/object_detection/index.html', 'detection')
+    PosixPath('/home/ubuntu/.d8/detection/index.html')
 
     This function also supports to download a Kaggle competition or dataset, the format is ``kaggle:name`` for a competition, and ``kaggle:user/name`` for a dataset.
 
     >>> download('kaggle:house-prices-advanced-regression-techniques')
-    PosixPath('/home/ubuntu/.autodatasets/house-prices-advanced-regression-techniques.zip')
+    PosixPath('/home/ubuntu/.d8/house-prices-advanced-regression-techniques.zip')
 
     :param url: The URL to be downloaded.
     :param save_dir: The directory to save the file, the default value is :py:func:`current_name`

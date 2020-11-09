@@ -2,8 +2,8 @@
 #    d2lbook build lib
 # Don't edit it directly
 
-import autodatasets as ad
-from autodatasets.image_classification import Dataset
+import d8 as ad
+from d8.image_classification import Dataset
 
 from_folders_meta = [
     {'name' : 'ibeans',

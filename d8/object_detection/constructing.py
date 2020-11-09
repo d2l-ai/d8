@@ -2,16 +2,16 @@
 #    d2lbook build lib
 # Don't edit it directly
 
-from autodatasets.object_detection import Dataset
+from d8.object_detection import Dataset
 
 def make_ml(name):
     camel_case = name.replace('-',' ').title().replace(' ', '')
     url = f'https://arcraftimages.s3-accelerate.amazonaws.com/Datasets/{camel_case}/{camel_case}PascalVOC.zip'
     return Dataset.from_voc(url, 'images', 'annotations')
 
-names = ['sheep', 'paper-prototype', 'raccoon', 'boggle-boards', 'plant-doc', 
-         'hard-hat-workers', 'pistol', 'cars-and-traffic-signs', 'tomato', 
-         'dice', 'potholes', 'ships', 'mask', 'chess', 'mobile-phones', 
+names = ['sheep', 'paper-prototype', 'raccoon', 'boggle-boards', 'plant-doc',
+         'hard-hat-workers', 'pistol', 'cars-and-traffic-signs', 'tomato',
+         'dice', 'potholes', 'ships', 'mask', 'chess', 'mobile-phones',
          'glasses', 'road-signs', 'fruits', 'bikes', 'headphones', 'fish',
          'drone', 'car-license-plates', 'pets', 'faces', 'helmets', 'clothing',
          'hands', 'soccer-ball'
@@ -20,9 +20,9 @@ names = ['sheep', 'paper-prototype', 'raccoon', 'boggle-boards', 'plant-doc',
 for name in names:
     Dataset.add(name, make_ml, [name])
 
-import autodatasets as ad
-from autodatasets.object_detection import dataset 
-import pandas as pd 
+import d8 as ad
+from d8.object_detection import dataset
+import pandas as pd
 
 @Dataset.add
 def stanford_dogs():

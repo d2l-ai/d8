@@ -1,11 +1,11 @@
 # Object Detection
 :label:`object_detection_api`
 
-The dataset class for object detection is provided in the `autodatasets.object_detection` module.
+The dataset class for object detection is provided in the `d8.object_detection` module.
 
 ```eval_rst
 
-.. currentmodule:: autodatasets.object_detection
+.. currentmodule:: d8.object_detection
 
 .. autoclass:: Dataset
 
@@ -13,7 +13,7 @@ The dataset class for object detection is provided in the `autodatasets.object_d
 
 ## Adding and Getting Datasets
 
-`autodatasets` provides a large set of build-in dataset, the following functions list, add and get these datasts.
+`d8` provides a large set of build-in dataset, the following functions list, add and get these datasts.
 
 ```eval_rst
 
@@ -72,7 +72,7 @@ These functions let you have a peak about a dataset.
 
 ```eval_rst
 
-.. autoclass:: autodatasets.object_detection.Dataset
+.. autoclass:: d8.object_detection.Dataset
    :members:
    :show-inheritance:
    :inherited-members:

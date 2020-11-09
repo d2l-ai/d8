@@ -1,11 +1,11 @@
 # Image Classification
 :label:`image_classification_api`
 
-The dataset class for image classification is provided in the `autodatasets.image_classification` module.
+The dataset class for image classification is provided in the `d8.image_classification` module.
 
 ```eval_rst
 
-.. currentmodule:: autodatasets.image_classification
+.. currentmodule:: d8.image_classification
 
 .. autoclass:: Dataset
 
@@ -13,7 +13,7 @@ The dataset class for image classification is provided in the `autodatasets.imag
 
 ## Adding and Getting Datasets
 
-`autodatasets` provides a large set of build-in dataset, the following functions list, add and get these datasts.
+`d8` provides a large set of build-in dataset, the following functions list, add and get these datasts.
 
 ```eval_rst
 
@@ -71,7 +71,7 @@ These functions let you have a peak about a dataset.
 
 ## Converting Formats
 
-These functions export a `autodatasets` dataset into dataset formats for various libraries.
+These functions export a `d8` dataset into dataset formats for various libraries.
 
 ```eval_rst
 
@@ -86,7 +86,7 @@ These functions export a `autodatasets` dataset into dataset formats for various
 
 ```eval_rst
 
-.. autoclass:: autodatasets.image_classification.Dataset
+.. autoclass:: d8.image_classification.Dataset
    :members:
    :show-inheritance:
    :inherited-members:

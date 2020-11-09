@@ -10,7 +10,7 @@ import pandas as pd
 # from . import file_reader
 from . import built_in_desc
 
-logging.basicConfig(format='[autodatasets:%(filename)s:L%(lineno)d] %(levelname)-6s %(message)s')
+logging.basicConfig(format='[d8:%(filename)s:L%(lineno)d] %(levelname)-6s %(message)s')
 logging.getLogger().setLevel(logging.INFO)
 
 # pd.set_option('display.max_columns', 500)
@@ -25,7 +25,7 @@ def main():
 #     parser = argparse.ArgumentParser(description='''
 # Auto Datasets: download ml datasets.
 
-# Run autodatasets command -h to get the help message for each command.
+# Run d8 command -h to get the help message for each command.
 # ''')
 #     parser.add_argument('command', nargs=1, choices=['list', 'download', 'update'])
 #     args = parser.parse_args(sys.argv[1:2])

@@ -4,7 +4,7 @@
 
 ```eval_rst
 
-.. automodule:: autodatasets.base_dataset
+.. automodule:: d8.base_dataset
    :members:
 
 ```
@@ -14,7 +14,7 @@
 
 ```eval_rst
 
-.. automodule:: autodatasets.data_reader
+.. automodule:: d8.data_reader
    :members:
    :imported-members:
 
@@ -23,7 +23,7 @@
 ## Data Downloader
 
 ```
-.. automodule:: autodatasets.data_downloader
+.. automodule:: d8.data_downloader
    :members:
    :imported-members:
 

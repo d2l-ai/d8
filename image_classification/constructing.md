@@ -3,7 +3,7 @@
 
 ```eval_rst
 
-.. currentmodule:: autodatasets.image_classification
+.. currentmodule:: d8.image_classification
 
 ```
 
@@ -21,7 +21,7 @@ The :class:`Dataset` class provides multiple class methods to construct an image
 ```
 
 
-In this tutorial, we show how all built-in datasets are constructed. You can follow these examples to construct your own datasets. If you would like to add your datasets into the `autodatasets` built-in dataset collection, it'll be great! You can add your code in this file and send us a pull request.
+In this tutorial, we show how all built-in datasets are constructed. You can follow these examples to construct your own datasets. If you would like to add your datasets into the `d8` built-in dataset collection, it'll be great! You can add your code in this file and send us a pull request.
 
 ```{.python .input  n=2}
 #@hide
@@ -33,15 +33,15 @@ from IPython import display
 display.set_matplotlib_formats('svg')
 ```
 
-Let's import `autodatasets` and the `Dataset` class.
+Let's import `d8` and the `Dataset` class.
 
 ```{.python .input  n=3}
 #@save
-import autodatasets as ad
-from autodatasets.image_classification import Dataset
+import d8 as ad
+from d8.image_classification import Dataset
 ```
 
-If you don't know which functions to use. The easy way is to load the data to print its file structure. TODO(mli) add an example. 
+If you don't know which functions to use. The easy way is to load the data to print its file structure. TODO(mli) add an example.
 
 ## `from_folders`
 

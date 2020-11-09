@@ -5,7 +5,7 @@
 # DO NOT EDIT THIS NOTEBOOK.
 
 # This notebook is automatically generated from the `template` notebook in this
-# folder by running `autodatasets gen_desc`
+# folder by running `d8 gen_desc`
 ```
 
 
@@ -21,7 +21,7 @@ import pandas as pd
 display.set_matplotlib_formats('svg')
 pd.set_option('precision', 2)
 
-from autodatasets.image_classification import Dataset
+from d8.image_classification import Dataset
 ```
 
 Summary about this dataset.
