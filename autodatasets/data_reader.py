@@ -24,6 +24,9 @@ class Reader(abc.ABC):
             raise NameError(f'{root} doesn\'t exists')
         self._root = root
 
+    def __eq__(self, other: 'Reader'):
+        return self._root == other._root
+
     @abc.abstractclassmethod
     def open(self, path: Union[str, pathlib.Path]):
         """Open file and return a stream.

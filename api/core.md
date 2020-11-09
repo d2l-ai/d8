@@ -10,7 +10,7 @@
 ```
 
 
-## Data Utilities
+## Data Reader
 
 ```eval_rst
 
@@ -18,6 +18,11 @@
    :members:
    :imported-members:
 
+```
+
+## Data Downloader
+
+```
 .. automodule:: autodatasets.data_downloader
    :members:
    :imported-members:

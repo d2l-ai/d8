@@ -10,9 +10,14 @@ from .. import base_dataset
 class Dataset(base_dataset.ClassificationDataset):
     TYPE = 'image_classification'
 
-    def show(self, layout=(2,8), scale=None, max_width=300):
+    def show(self, layout=(2,8)) -> None:
+        """Show several random examples with their labels.
+
+        :param layout: A tuple of (number of rows, number of columns).
+        """
         nrows, ncols = layout
-        if not scale: scale = 14 / ncols
+        max_width=300
+        scale = 14 / ncols
         figsize = (ncols * scale, nrows * scale)
         _, axes = plt.subplots(nrows, ncols, figsize=figsize)
         samples = self.df.sample(n=nrows*ncols, random_state=0)
@@ -22,7 +27,8 @@ class Dataset(base_dataset.ClassificationDataset):
             ax.imshow(img)
             ax.axis("off")
 
-    def summary(self):
+    def summary(self) -> pd.DataFrame:
+        """Returns a summary about this dataset."""
         path = self._get_summary_path()
         if path and path.exists(): return pd.read_pickle(path)
         get_mean_std = lambda col: f'{col.mean():.1f} ± {col.std():.1f}'
@@ -82,6 +88,13 @@ class Dataset(base_dataset.ClassificationDataset):
     @classmethod
     def from_label_func(cls, datapath: str,
                         label_func: Callable[[pathlib.Path], str]) -> 'Dataset':
+        """Create a dataset from a function that maps a image path to its class name.
+
+        :param datapath: Either a URL or a local path. For the former, data will be downloaded automatically.
+        :param label_func: A function takes an image path (an instance :class:`pathlib.Path`) to return a string class name or a None to skip this image.
+        :return: The created dataset.
+        :param datapath:
+        """
         def get_df(reader):
             entries = []
             for filepath in reader.list_images():

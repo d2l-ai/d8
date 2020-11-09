@@ -23,7 +23,7 @@ The :class:`Dataset` class provides multiple class methods to construct an image
 
 In this tutorial, we show how all built-in datasets are constructed. You can follow these examples to construct your own datasets. If you would like to add your datasets into the `autodatasets` built-in dataset collection, it'll be great! You can add your code in this file and send us a pull request.
 
-```{.python .input  n=1}
+```{.python .input  n=2}
 #@hide
 %matplotlib inline
 %load_ext autoreload
@@ -35,13 +35,13 @@ display.set_matplotlib_formats('svg')
 
 Let's import `autodatasets` and the `Dataset` class.
 
-```{.python .input  n=2}
+```{.python .input  n=3}
 #@save
 import autodatasets as ad
 from autodatasets.image_classification import Dataset
 ```
 
-If you don't know which functions to use. The easy way is to xxx
+If you don't know which functions to use. The easy way is to load the data to print its file structure. TODO(mli) add an example. 
 
 ## `from_folders`
 
@@ -244,4 +244,15 @@ for row in from_label_func_meta:
 show('flower-10')
 ```
 
-You can check the detailed information of all added datasets in :ref:`image_classification_built_in`.
+## `from_df_func`
+
+A `df_func` should return a Pandas DataFrame that contains at least two columns. One column is called `filepath`, containing the relative image file paths related to the root, the other column is called `classname`, containing the image labels. Let's look at example.
+
+```{.python .input  n=5}
+ds = Dataset.get('boat')
+ds.df.head(n=3)
+```
+
+TODO(mli) add an example here.
+
+Last, you can check the detailed information of all added datasets in :ref:`image_classification_built_in`.

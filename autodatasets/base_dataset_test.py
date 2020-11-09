@@ -13,9 +13,23 @@ class TestBaseDataset(unittest.TestCase):
         self.assertEqual(len(a), 3)
         self.assertEqual(len(b), 3)
         self.assertEqual(a.df['filepath'].tolist(), [6, 3, 2])
-        a, b = self.ds.split(1.0)
-        self.assertEqual(len(a), 6)
-        self.assertEqual(len(b), 0)
+
+        c, d = self.ds.split(0.5)
+        self.assertTrue(c.df.equals(a.df))
+        self.assertTrue(b.df.equals(d.df))
+
+        rets = self.ds.split([0.2, 0.3, 0.4])
+        self.assertEqual(len(rets), 4)
+        self.assertEqual(len(rets[0]), 1)
+        self.assertEqual(len(rets[1]), 2)
+        self.assertEqual(len(rets[2]), 2)
+        self.assertEqual(len(rets[3]), 1)
+
+    def test_merge(self):
+        rets = self.ds.split([0.3, 0.4], shuffle=False)
+        ds = rets[0].merge(*rets[1:])
+        self.assertTrue(ds.df['filepath'].equals(self.ds.df['filepath']))
+
 
     def test_add(self):
         @BaseDataset.add

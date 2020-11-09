@@ -50,6 +50,7 @@ These functions manipulate a dataset.
 .. autosummary::
 
    Dataset.split
+   Dataset.merge
 
 ```
 

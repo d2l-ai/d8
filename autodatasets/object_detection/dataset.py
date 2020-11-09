@@ -15,7 +15,7 @@ import logging
 from .. import base_dataset
 
 @dataclasses.dataclass
-class Label:
+class BBox:
     filepath: str
     classname: str
     xmin: float
@@ -35,7 +35,7 @@ class Label:
             return False
         return True
 
-def parse_voc_annotation(xml_fp) -> List[Label]:
+def parse_voc_annotation(xml_fp) -> List[BBox]:
     root = ET.parse(xml_fp).getroot()
     filepath = root.find('filename').text.strip()
     size = root.find('size')
@@ -49,7 +49,7 @@ def parse_voc_annotation(xml_fp) -> List[Label]:
         ymin = float(xml_box.find('ymin').text) / height
         xmax = float(xml_box.find('xmax').text) / width
         ymax = float(xml_box.find('ymax').text) / height
-        label = Label(filepath, classname, xmin, ymin, xmax, ymax)
+        label = BBox(filepath, classname, xmin, ymin, xmax, ymax)
         label.project_bbox()
         if not label.is_bbox_valid():
             logging.warning(f'Invalid bounding box {label}')
@@ -78,9 +78,14 @@ def _parse_voc(reader, image_dir, annotation_dir):
 class Dataset(base_dataset.ClassificationDataset):
     TYPE = 'object_detection'
 
-    def show(self, layout=(2,4), scale=None, max_width=500):
+    def show(self, layout=(2,4)) -> None:
+        """Show several random examples with their labels.
+
+        :param layout: A tuple of (number of rows, number of columns).
+        """
         nrows, ncols = layout
-        if not scale: scale = 10 / ncols
+        max_width=500
+        scale = 10 / ncols
         figsize = (ncols * scale, nrows * scale)
         _, axes = plt.subplots(nrows, ncols, figsize=figsize)
         random.seed(0)
@@ -105,6 +110,7 @@ class Dataset(base_dataset.ClassificationDataset):
                                 lw=0, alpha=1, pad=2))
 
     def summary(self):
+        """Returns a summary about this dataset."""
         path = self._get_summary_path()
         if path and path.exists(): return pd.read_pickle(path)
         get_mean_std = lambda col: f'{col.mean():.1f} ± {col.std():.1f}'
@@ -125,6 +131,12 @@ class Dataset(base_dataset.ClassificationDataset):
     @classmethod
     def from_voc(cls, datapath: str,
                  image_folders: str, annotation_folders: str):
+        """Create a dataset when data are stored in the VOC format.
+
+        :param datapath: Either a URL or a local path. For the former, data will be downloaded automatically.
+        :param folders: The folders containing all example images.
+        :return: The created dataset.
+        """
         listify = lambda x: x if isinstance(x, (tuple, list)) else [x]
 
         def get_df_func(image_folders, annotation_folders):

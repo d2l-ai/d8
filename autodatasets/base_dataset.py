@@ -1,4 +1,4 @@
-from typing import Optional, Union, Callable, Tuple, Sequence
+from typing import Optional, Union, Callable, Tuple, Sequence, List
 import pandas as pd
 from . import data_reader
 from . import data_downloader
@@ -39,17 +39,43 @@ class BaseDataset(object):
         """Return the number of examples."""
         return len(self.df)
 
-    def split(self, frac: float, shuffle: bool=True) -> Tuple['BaseDataset', 'BaseDataset']:
-        """Split a dataset into two.
+    def split(self, frac: Union[float, Sequence[float]], shuffle: bool = True, seed: int = 0) -> List['BaseDataset']:
+        """Split a dataset.
 
-        :param frac: The fraction, in (0, 1), of examples for the first dataset.
+        When ``frac`` is a float, it returns two datasets, with the first one has frac*len(self) examples.
+        If ``frac`` is a list, then its sum should be less or equal to 1. len(frac)+1 datasets will return.
+
+        :param frac: A fraction, in (0, 1), or a list of fractions.
         :param shuffle: If True (default), then randomly shuffle the examples before spliting.
-        :return: Two datasets, each has the same type as this instance.
+        :param seed: The random seed (default 0) to shuffle the examples given ``shuffle=True``.
+        :return: A list of datasets, each has the same type as this instance.
         """
-        df = self.df.sample(frac=1, random_state=0) if shuffle else self.df
-        n = int(len(df) * frac)
-        return (self.__class__(df.iloc[:n].reset_index(), self.reader, self.name+'.0'),
-                self.__class__(df.iloc[n:].reset_index(), self.reader, self.name+'.1'))
+        df = self.df.sample(frac=1, random_state=seed) if shuffle else self.df
+        if not isinstance(frac, (tuple, list)): frac = [frac]
+        if sum(frac) >= 1:
+            raise ValueError(f'the sum of frac {sum(frac)} should be less than 1')
+        frac = frac + [1.0 - sum(frac)]
+        rets = []
+        s = 0
+        for i, f in enumerate(frac):
+            if f <= 0: raise ValueError(f'frac {f} is not in (0, 1)')
+            e = int(sum(frac[:(i+1)]) * len(df))
+            rets.append(self.__class__(df.iloc[s:e].reset_index(), self.reader, f'{self.name}.{i}'))
+            s = e
+        return rets
+
+    def merge(self, *args: 'BaseDataset') -> 'BaseDataset':
+        """Merge with other datasets.
+
+        :param args: One or multiple datasets
+        :return: A new dataset with examples merged.
+        """
+        dfs = [self.df]
+        for ds in args:
+            if ds.reader != self.reader:
+                raise ValueError('You cannot merge with another dataset with a different reader')
+            dfs.append(ds.df)
+        return self.__class__(pd.concat(dfs, axis=0).reset_index(), self.reader, self.name+'.merged')
 
     @classmethod
     def add(cls, entry, *args) -> None:
@@ -148,13 +174,12 @@ class ClassificationDataset(BaseDataset):
         super().__init__(df, reader, name)
         self.classes = sorted(self.df['classname'].unique().tolist())
 
-    def split(self, frac: float, shuffle: bool=True):
+    def split(self, frac: float, shuffle: bool = True, seed: int = 0):
         """Split a dataset into two.
 
         It is similar to :py:func:`BaseDataset.split`, but it guarantees the splitted datasets
         will have the same `classes` as this one.
         """
-        a, b = super().split(frac, shuffle)
-        a.classes = self.classes
-        b.classes = self.classes
-        return a, b
+        rets = super().split(frac, shuffle, seed)
+        for r in rets: r.classes = self.classes
+        return rets
