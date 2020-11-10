@@ -1,7 +1,6 @@
-# This file is generated from object_detection/dataset.md automatically through:
-#    d2lbook build lib
-# Don't edit it directly
+# The `dataset` class
 
+```{.python .input}
 #@save_all
 #@hide_all
 import pathlib
@@ -20,7 +19,9 @@ import logging
 
 from d8 import base_dataset
 
+```
 
+```{.python .input}
 @dataclasses.dataclass
 class BBox:
     filepath: str
@@ -162,4 +163,4 @@ class Dataset(base_dataset.ClassificationDataset):
         df = super().summary_all(quick)
         return df.sort_values('# images')
 
-
+```

@@ -22,7 +22,7 @@ def generate(task_type: str):
     with template.open('r') as f:
         lines = f.readlines()
     mod = importlib.import_module('d8.'+task_type)
-    names = mod.Dataset.list()
+    names = mod.Dataset.list() # type: ignore
     for name in names:
         tgt = dir/(name+'.md')
         if tgt.exists() and tgt.stat().st_mtime > template.stat().st_mtime:

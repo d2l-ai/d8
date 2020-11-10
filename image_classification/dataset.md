@@ -1,7 +1,100 @@
-# This file is generated from image_classification/dataset.md automatically through:
-#    d2lbook build lib
-# Don't edit it directly
+# The `Dataset` class
 
+```eval_rst
+
+.. currentmodule:: d8.image_classification
+
+.. autoclass:: Dataset
+
+```
+
+
+## Adding and Getting Datasets
+
+The following functions list, add and get these datasts.
+
+```eval_rst
+
+.. autosummary::
+
+   Dataset.list
+   Dataset.get
+   Dataset.add
+
+```
+
+
+## Constructing a Dataset
+
+We often construct a new dataset using one of the following class methods.
+You could find examples from :ref:`sec_image_classification`.
+
+```eval_rst
+
+.. autosummary::
+
+   Dataset.from_folders
+   Dataset.from_label_func
+   Dataset.from_df_func
+
+```
+
+
+## Manipulating a Dataset
+
+These functions manipulate a dataset.
+
+```eval_rst
+
+.. autosummary::
+
+   Dataset.split
+   Dataset.merge
+
+```
+
+
+## Visualizing a Dataset
+
+These functions let you have a peak about a dataset.
+
+```eval_rst
+
+.. autosummary::
+
+   Dataset.show
+   Dataset.summary
+   Dataset.summary_all
+
+```
+
+
+## Converting Formats
+
+These functions export a `d8` dataset into dataset formats for various libraries.
+
+```eval_rst
+
+.. autosummary::
+
+   Dataset.to_mxnet
+
+```
+
+
+## `Dataset`
+
+```eval_rst
+
+.. autoclass:: d8.image_classification.Dataset
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+```
+
+
+```{.python .input  n=6}
 #@save_all
 #@hide_all
 import pathlib
@@ -13,7 +106,9 @@ import numpy as np
 import unittest
 
 from d8 import base_dataset
+```
 
+```{.python .input  n=8}
 class Dataset(base_dataset.ClassificationDataset):
     TYPE = 'image_classification'
 
@@ -115,7 +210,9 @@ class Dataset(base_dataset.ClassificationDataset):
         df = super().summary_all(quick)
         return df.sort_values('# images')
 
+```
 
+```{.python .input}
 class TestDataset(unittest.TestCase):
         
     def test_from_folders(self):
@@ -128,7 +225,9 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(len(items), 2)
         self.assertEqual(items[0].shape, (1024, 683, 3))
         self.assertEqual(items[1], 'Bishop')
+```
 
+```{.python .input}
 if __name__ == '__main__':
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
-
+```

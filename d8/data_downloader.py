@@ -194,9 +194,9 @@ def _download_url(url: str, save_filepath: pathlib.Path, overwrite=False):
     total_size_in_bytes = int(r.headers.get('content-length', 0))
     progress_bar = tqdm.tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True)
     block_size = 2**20
-    with save_filepath.open('wb') as f:
+    with save_filepath.open('wb') as fb:
         for chunk in r.iter_content(chunk_size=block_size):
-            f.write(chunk)
+            fb.write(chunk)
             progress_bar.update(len(chunk))
     progress_bar.close()
     if progress_bar.n != total_size_in_bytes:

@@ -4,6 +4,7 @@
 
 from d8.object_detection import Dataset
 
+#@save_cell
 def make_ml(name):
     camel_case = name.replace('-',' ').title().replace(' ', '')
     url = f'https://arcraftimages.s3-accelerate.amazonaws.com/Datasets/{camel_case}/{camel_case}PascalVOC.zip'
@@ -20,6 +21,7 @@ names = ['sheep', 'paper-prototype', 'raccoon', 'boggle-boards', 'plant-doc',
 for name in names:
     Dataset.add(name, make_ml, [name])
 
+#@save_cell
 import d8 as ad
 from d8.object_detection import dataset
 import pandas as pd
@@ -37,6 +39,7 @@ def stanford_dogs():
     return Dataset(pd.DataFrame(entries), reader)
 
 
+#@save_cell
 @Dataset.add
 def wheat():
     def train_df_fn(reader):

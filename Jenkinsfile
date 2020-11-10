@@ -17,15 +17,17 @@ stage("Build and Publish") {
       def CUDA_VISIBLE_DEVICES=(EID*2).toString() + ',' + (EID*2+1).toString();
 
       sh label: "Build Environment", script: """set -ex
-      conda env update -n ${ENV_NAME} -f static/build.yml
+      conda env update -n ${ENV_NAME} -f test.yml
       conda activate ${ENV_NAME}
       pip list
       nvidia-smi
       """
 
-      sh label: "Sanity Check", script: """set -ex
+      sh label: "Unit Tests", script: """set -ex
       conda activate ${ENV_NAME}
       d2lbook build outputcheck
+      python -m unittest d8/*.py d8/**/*.py
+      mypy --ignore-missing-imports d8/*.py
       """
 
       sh label: "Execute Notebooks", script: """set -ex

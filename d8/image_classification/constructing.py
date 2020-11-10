@@ -2,10 +2,12 @@
 #    d2lbook build lib
 # Don't edit it directly
 
+from typing import Sequence, Dict, Union, Callable, Any, Optional
 import d8 as ad
 from d8.image_classification import Dataset
 
-from_folders_meta = [
+#@save_cell
+from_folders_meta: Sequence[Dict[str, Union[Sequence[str], str]]] = [
     {'name' : 'ibeans',
      'url'  : [f'https://storage.googleapis.com/ibeans/{part}.zip' for part in ('train', 'validation', 'test')],
      'root' : ('*/train', '*/validation', '*/test')},
@@ -122,10 +124,11 @@ from_folders_meta = [
      'root' : '*'},
 ]
 
-for row in from_folders_meta:
-    Dataset.add(row['name'], Dataset.from_folders, (row['url'], row['root']))
+for x in from_folders_meta:
+    Dataset.add(x['name'], Dataset.from_folders, (x['url'], x['root']))
 
-from_label_func_meta = [
+#@save_cell
+from_label_func_meta: Sequence[Dict[str, Union[Callable[[Any], Optional[str]], Sequence[str], str]]] = [
     {'name' : 'stanford-dogs',
      'url'  : 'kaggle:jessicali9530/stanford-dogs-dataset',
      'func' : lambda path: path.parent.name.split('-')[1].lower()},
@@ -161,6 +164,6 @@ from_label_func_meta = [
      'func' : lambda path: path.name.split('_')[0].lower()}
 ]
 
-for row in from_label_func_meta:
-    Dataset.add(row['name'], Dataset.from_label_func, (row['url'], row['func']))
+for y in from_label_func_meta:
+    Dataset.add(y['name'], Dataset.from_label_func, (y['url'], y['func']))
 

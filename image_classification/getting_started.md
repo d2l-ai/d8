@@ -101,4 +101,3 @@ Dataset.add('boat', Dataset.from_folders,
 ```
 
 Besides `from_folders`, there are other convenient methods to construct datasets. You can check how we constructed all the built-in datasets in :ref:`image_classification_constructing`.
-

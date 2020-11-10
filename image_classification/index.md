@@ -6,5 +6,6 @@ getting_started
 use_cases/index
 constructing
 built_in/index
+dataset
 ```
 

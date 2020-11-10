@@ -24,7 +24,9 @@ class Reader(abc.ABC):
             raise NameError(f'{root} doesn\'t exists')
         self._root = root
 
-    def __eq__(self, other: 'Reader'):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(object, Reader):
+            return NotImplemented
         return self._root == other._root
 
     @abc.abstractclassmethod
@@ -59,7 +61,7 @@ class Reader(abc.ABC):
 
         :return: The list of image file paths.
         """
-        image_extensions = set(k for k,v in mimetypes.types_map.items() if v.startswith('image/'))
+        image_extensions = list(set(k for k,v in mimetypes.types_map.items() if v.startswith('image/')))
         return self.list_files(image_extensions, subfolders)
 
     def read_image(self, filepath: Union[str, pathlib.Path],
@@ -99,18 +101,21 @@ class Reader(abc.ABC):
                         'width':img.size[0], 'height':img.size[1]})
         return pd.DataFrame(rows)
 
+Path = Union[str, pathlib.Path]
 
-def create_reader(root: Union[str, pathlib.Path]) -> Reader:
+def create_reader(root: Union[Path, Sequence[Path]]) -> Reader:
     """The factory function to create a data reader.
 
     Based on the root path type, such as folder, zip file, tar file, proper data
     reader will be created.
 
-    :param root: The root path, it must exists.
+    :param root: The root path, or the list of root paths, it must exist locally.
     :return: The created data reader
     """
     if isinstance(root, (tuple, list)):
-        if len(root) == 1:
+        if len(root) == 0:
+            return EmptyReader()
+        elif len(root) == 1:
             return create_reader(root[0])
         return MultiReader(root)
     roots = list(glob.glob(str(root)))
@@ -126,6 +131,14 @@ def create_reader(root: Union[str, pathlib.Path]) -> Reader:
     if root.suffix in ['.tar', '.tgz', '.gz']:
         return TarReader(root)
     raise ValueError(f'Not support {root}')
+
+class EmptyReader(Reader):
+    def __init__(self):
+        pass
+    def _list_all(self):
+        return []
+    def open(self, path: Union[str, pathlib.Path]):
+        raise ValueError('Empty reader cannot open a path')
 
 class FolderReader(Reader):
     def __init__(self, root: pathlib.Path):

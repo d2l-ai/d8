@@ -1,9 +1,13 @@
-from typing import Optional, Union, Callable, Tuple, Sequence, List
+from typing import Optional, Union, Callable, Tuple, Sequence, List, Type, TypeVar
 import pandas as pd
 from . import data_reader
 from . import data_downloader
 import pathlib
 import logging
+
+_listify = lambda x: [] if not x else (list(x) if isinstance(x, (tuple, list)) else [x])
+
+_T = TypeVar("_T", bound='BaseDataset')
 
 class BaseDataset(object):
     """The base class of a dataset.
@@ -22,18 +26,18 @@ class BaseDataset(object):
     def __init__(self,
                  df: pd.DataFrame,
                  reader: Optional[data_reader.Reader] = None,
-                 name: Optional[str] = '') -> None:
+                 name: str = '') -> None:
         if not isinstance(df, pd.DataFrame):
             raise TypeError(f'{type(df)} is a not pandas DataFrame')
         self.df = df
         if len(self.df) == 0:
             logging.warning('No example is found as `df` is empty.')
             logging.warning('You may use `ds.reader.list_files()` to check all files.')
-        self.reader = reader
+        self.reader = data_reader.EmptyReader() if reader is None else reader
         self.name = name
 
     TYPE = ''
-    _DATASETS = dict()
+    _DATASETS = dict()  # type: ignore
 
     def __len__(self) -> int:
         """Return the number of examples."""
@@ -51,7 +55,7 @@ class BaseDataset(object):
         :return: A list of datasets, each has the same type as this instance.
         """
         df = self.df.sample(frac=1, random_state=seed) if shuffle else self.df
-        if not isinstance(frac, (tuple, list)): frac = [frac]
+        frac = _listify(frac)
         if sum(frac) >= 1:
             raise ValueError(f'the sum of frac {sum(frac)} should be less than 1')
         frac = frac + [1.0 - sum(frac)]
@@ -112,28 +116,28 @@ class BaseDataset(object):
         return [name for typ, name in cls._DATASETS if typ == cls.TYPE]
 
     @classmethod
-    def from_df_func(cls, datapath: Optional[Union[str, Sequence[str]]],
-                     df_func: Callable[[data_reader.Reader], pd.DataFrame]) -> 'BaseDataset':
+    def from_df_func(cls: Type[_T], datapath: Optional[Union[str, Sequence[str]]],
+                     df_func: Callable[[data_reader.Reader], pd.DataFrame]) -> _T:
         """Create a dataset from a dataframe function.
 
         :param datapath: A remote URL (data will be downloaded automatically) or a local datapath, or a list of them
         :param df_func: A function takes `self.reader` as its input to return the dataframe.
         """
-        if datapath is None:
-            reader = None
-        else:
-            if isinstance(datapath, str) or isinstance(datapath, pathlib.Path):
-                datapath = [datapath]
-            datapath = [(p if pathlib.Path(p).exists() else data_downloader.download(p, extract=True)) for p in datapath]
-            reader = data_reader.create_reader(datapath)
+        datapath = _listify(datapath)
+        datapath = [(p if pathlib.Path(p).exists() else data_downloader.download(p, extract=True)) for p in datapath]
+        reader = data_reader.create_reader(datapath)
         return cls(df_func(reader), reader)
 
-    def _get_summary_path(self):
+    def summary(self) -> pd.DataFrame:
+        """Returns a summary about this dataset."""
+        raise NotImplementedError()
+
+    def _get_summary_path(self) -> Optional[pathlib.Path]:
         if not self.name: return None
         return pathlib.Path(data_downloader.DATAROOT/self.name/f'{self.TYPE}_summary.pkl')
 
     @classmethod
-    def summary_all(cls, quick: bool=False):
+    def summary_all(cls, quick: bool=False) -> pd.DataFrame:
         """Return the summary of all datasets.
 
         :param quick: If True (default is False), then load saved summary from local disk instead of computing it.
@@ -145,7 +149,8 @@ class BaseDataset(object):
         for name in cls.list():
             if quick:
                 ds = cls(pd.DataFrame([{'classname':'fack'}]), None, name)
-                if not ds._get_summary_path().exists():
+                path = ds._get_summary_path()
+                if not path or not path.exists():
                     failed.append(name)
                     continue
             else:
@@ -170,16 +175,16 @@ class ClassificationDataset(BaseDataset):
     def __init__(self,
                  df: pd.DataFrame,
                  reader: Optional[data_reader.Reader] = None,
-                 name: Optional[str] = ''):
+                 name: str = ''):
         super().__init__(df, reader, name)
         self.classes = sorted(self.df['classname'].unique().tolist())
 
-    def split(self, frac: float, shuffle: bool = True, seed: int = 0):
+    def split(self, frac: Union[float, Sequence[float]], shuffle: bool = True, seed: int = 0):
         """Split a dataset into two.
 
         It is similar to :py:func:`BaseDataset.split`, but it guarantees the splitted datasets
         will have the same `classes` as this one.
         """
         rets = super().split(frac, shuffle, seed)
-        for r in rets: r.classes = self.classes
+        for r in rets: r.classes = self.classes  # type: ignore
         return rets

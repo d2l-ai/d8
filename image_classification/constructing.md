@@ -37,6 +37,7 @@ Let's import `d8` and the `Dataset` class.
 
 ```{.python .input  n=3}
 #@save
+from typing import Sequence, Dict, Union, Callable, Any, Optional
 import d8 as ad
 from d8.image_classification import Dataset
 ```
@@ -52,7 +53,7 @@ To use the `from_folders` method, we need to specify the name, URLs and roots fo
 
 ```{.python .input}
 #@save_cell
-from_folders_meta = [
+from_folders_meta: Sequence[Dict[str, Union[Sequence[str], str]]] = [
     {'name' : 'ibeans',
      'url'  : [f'https://storage.googleapis.com/ibeans/{part}.zip' for part in ('train', 'validation', 'test')],
      'root' : ('*/train', '*/validation', '*/test')},
@@ -174,8 +175,8 @@ Then we add each dataset one-by-one.
 
 ```{.python .input}
 #@save
-for row in from_folders_meta:
-    Dataset.add(row['name'], Dataset.from_folders, (row['url'], row['root']))
+for x in from_folders_meta:
+    Dataset.add(x['name'], Dataset.from_folders, (x['url'], x['root']))
 ```
 
 Check a random dataset if it looks right.
@@ -197,7 +198,7 @@ Even sometimes the data format fits into `from_folders`, we may still use this m
 
 ```{.python .input}
 #@save_cell
-from_label_func_meta = [
+from_label_func_meta: Sequence[Dict[str, Union[Callable[[Any], Optional[str]], Sequence[str], str]]] = [
     {'name' : 'stanford-dogs',
      'url'  : 'kaggle:jessicali9530/stanford-dogs-dataset',
      'func' : lambda path: path.parent.name.split('-')[1].lower()},
@@ -238,8 +239,8 @@ Again, register all datasets and check one random dataset.
 
 ```{.python .input}
 #@save
-for row in from_label_func_meta:
-    Dataset.add(row['name'], Dataset.from_label_func, (row['url'], row['func']))
+for y in from_label_func_meta:
+    Dataset.add(y['name'], Dataset.from_label_func, (y['url'], y['func']))
 
 show('flower-10')
 ```
