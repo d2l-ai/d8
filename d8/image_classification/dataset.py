@@ -127,7 +127,6 @@ class TestDataset(unittest.TestCase):
         items = ds[10]
         self.assertEqual(len(items), 2)
         self.assertEqual(items[0].shape[2], 3)
-        self.assertEqual(items[1], 'Bishop')
 
 if __name__ == '__main__':
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
