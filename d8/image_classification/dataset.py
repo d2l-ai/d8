@@ -29,8 +29,8 @@ class Dataset(base_dataset.ClassificationDataset):
         _, axes = plt.subplots(nrows, ncols, figsize=figsize)
         samples = self.df.sample(n=nrows*ncols, random_state=0)
         for ax, (_, sample) in zip(axes.flatten(), samples.iterrows()):
-            ax.set_title(sample['classname'])
-            img = self.reader.read_image(sample['filepath'], max_width=max_width)
+            ax.set_title(sample['class_name'])
+            img = self.reader.read_image(sample['file_path'], max_width=max_width)
             ax.imshow(img)
             ax.axis("off")
 
@@ -39,7 +39,7 @@ class Dataset(base_dataset.ClassificationDataset):
         path = self._get_summary_path()
         if path and path.exists(): return pd.read_pickle(path)
         get_mean_std = lambda col: f'{col.mean():.1f} ± {col.std():.1f}'
-        img_df = self.reader.get_image_info(self.df['filepath'])
+        img_df = self.reader.get_image_info(self.df['file_path'])
         summary = pd.DataFrame([{'# images':len(img_df),
                                  '# classes':len(self.classes),
                                  'image width':get_mean_std(img_df['width']),
@@ -51,9 +51,9 @@ class Dataset(base_dataset.ClassificationDataset):
     def __getitem__(self, idx):
         if idx < 0 or idx > self.__len__():
             raise IndexError(f'index {idx} out of range [0, {self.__len__()})')
-        filepath = self.df['filepath'][idx]
-        img = self.reader.read_image(filepath)
-        return np.array(img), self.df['classname'][idx]
+        file_path = self.df['file_path'][idx]
+        img = self.reader.read_image(file_path)
+        return np.array(img), self.df['class_name'][idx]
 
     def to_mxnet(self):
         """Returns a MXNet dataset instance"""
@@ -66,10 +66,10 @@ class Dataset(base_dataset.ClassificationDataset):
                 self.classes = dataset.classes
 
             def __getitem__(self, idx):
-                filepath = self.data.df['filepath'][idx]
-                img = self.data.reader.read_image(filepath)
+                file_path = self.data.df['file_path'][idx]
+                img = self.data.reader.read_image(file_path)
                 img = mx.nd.array(img)
-                label = self.label_to_idx[self.data.df['classname'][idx]]
+                label = self.label_to_idx[self.data.df['class_name'][idx]]
                 return img, label
 
             def __len__(self):
@@ -85,10 +85,10 @@ class Dataset(base_dataset.ClassificationDataset):
         :return: The created dataset.
         """
         if isinstance(folders, (str, pathlib.Path)): folders = [folders]
-        def label_func(filepath):
+        def label_func(file_path):
             for folder in folders:
-                if fnmatch.fnmatch(str(filepath.parent.parent), folder):
-                    return filepath.parent.name
+                if fnmatch.fnmatch(str(file_path.parent.parent), folder):
+                    return file_path.parent.name
             return None
         return cls.from_label_func(datapath, label_func)
 
@@ -104,9 +104,9 @@ class Dataset(base_dataset.ClassificationDataset):
         """
         def get_df(reader):
             entries = []
-            for filepath in reader.list_images():
-                lbl = label_func(filepath)
-                if lbl: entries.append({'filepath':filepath, 'classname':lbl})
+            for file_path in reader.list_images():
+                lbl = label_func(file_path)
+                if lbl: entries.append({'file_path':file_path, 'class_name':lbl})
             return pd.DataFrame(entries)
         return cls.from_df_func(datapath, get_df)
 
@@ -117,10 +117,10 @@ class Dataset(base_dataset.ClassificationDataset):
 
 
 class TestDataset(unittest.TestCase):
-        
+
     def test_from_folders(self):
-        Dataset.add('chessman_test', Dataset.from_folders, 
-                     ['kaggle:niteshfre/chessman-image-dataset', '*'])        
+        Dataset.add('chessman_test', Dataset.from_folders,
+                     ['kaggle:niteshfre/chessman-image-dataset', '*'])
         ds = Dataset.get('chessman_test')
         self.assertEqual(len(ds.df), 552)
         self.assertEqual(ds.classes, ['Bishop', 'King', 'Knight', 'Pawn', 'Queen', 'Rook'])

@@ -9,6 +9,7 @@ import PIL
 import pandas as pd
 import io
 import glob
+import logging
 
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -33,7 +34,7 @@ class Reader(abc.ABC):
     def open(self, path: Union[str, pathlib.Path]):
         """Open file and return a stream.
 
-        :param path: The relative filepath to the root
+        :param path: The relative file_path to the root
         :return: A file object depends on the reader type.
         """
         pass
@@ -64,19 +65,19 @@ class Reader(abc.ABC):
         image_extensions = list(set(k for k,v in mimetypes.types_map.items() if v.startswith('image/')))
         return self.list_files(image_extensions, subfolders)
 
-    def read_image(self, filepath: Union[str, pathlib.Path],
+    def read_image(self, file_path: Union[str, pathlib.Path],
                    max_width: Optional[int] = None,
                    max_height: Optional[int] = None):
         """Read an image.
 
-        :param filepath: The image filepath.
+        :param file_path: The image file_path.
         :param max_width: The maximal width in pixel for the returned image.
             Specifying it with a small value may accelerate the reading.
         :param max_height: The maximal height in pixel for the returned image.
             Specifying it with a small value may accelerate the reading.
         :return: The image as a numpy array.
         """
-        img = PIL.Image.open(self.open(filepath))
+        img = PIL.Image.open(self.open(file_path))
         if img.mode != 'RGB': img = img.convert('RGB')
         ratio = 0
         if max_width: ratio = max(ratio, img.size[0] / max_width)
@@ -90,18 +91,20 @@ class Reader(abc.ABC):
         """Query image information such as size, width and height.
 
         :param reader: The data reader.
-        :param image_paths: The image filepaths to query.
+        :param image_paths: The image file_paths to query.
         :return: The results with each image in a row.
         """
         rows = []
         for img_path in image_paths:
             raw = self.open(img_path).read()
             img = PIL.Image.open(io.BytesIO(raw))
-            rows.append({'filepath':img_path, 'size (KB)':len(raw)/2**10,
+            rows.append({'file_path':img_path, 'size (KB)':len(raw)/2**10,
                         'width':img.size[0], 'height':img.size[1]})
         return pd.DataFrame(rows)
 
 Path = Union[str, pathlib.Path]
+
+_listify = lambda x: [] if not x else (list(x) if isinstance(x, (tuple, list)) else [x])
 
 def create_reader(root: Union[Path, Sequence[Path]]) -> Reader:
     """The factory function to create a data reader.
@@ -112,18 +115,15 @@ def create_reader(root: Union[Path, Sequence[Path]]) -> Reader:
     :param root: The root path, or the list of root paths, it must exist locally.
     :return: The created data reader
     """
-    if isinstance(root, (tuple, list)):
-        if len(root) == 0:
-            return EmptyReader()
-        elif len(root) == 1:
-            return create_reader(root[0])
-        return MultiReader(root)
-    roots = list(glob.glob(str(root)))
+    roots = []
+    for r in _listify(root):
+        roots.extend([pathlib.Path(g) for g in glob.glob(str(r))])
+    roots = list(set(roots))
     if len(roots) == 0:
-        raise ValueError('Not found {root}')
+        return EmptyReader()
     if len(roots) > 1:
-        return create_reader(roots)
-    root = pathlib.Path(roots[0])
+        raise NotImplementedError()
+    root = roots[0]
     if root.is_dir():
         return FolderReader(root)
     if root.suffix == '.zip':

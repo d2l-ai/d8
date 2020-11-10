@@ -76,28 +76,28 @@ def download(url: str,
     #     return [download(u, save_dir) for u in url]
     if save_dir is None: save_dir = current_name()
     if url.startswith('kaggle:'):
-        save_filepath =  _download_kaggle(url[7:], save_dir)
+        save_file_path =  _download_kaggle(url[7:], save_dir)
     else:
-        save_filepath = DATAROOT/save_dir/url.split('/')[-1]
-        _download_url(url, save_filepath)
+        save_file_path = DATAROOT/save_dir/url.split('/')[-1]
+        _download_url(url, save_file_path)
     if extract:
-        return extract_file(save_filepath)
-    return save_filepath
+        return extract_file(save_file_path)
+    return save_file_path
 
-def extract_file(filepath, save_folder=None):
-    filepath = pathlib.Path(filepath)
+def extract_file(file_path, save_folder=None):
+    file_path = pathlib.Path(file_path)
     if save_folder is None:
-        save_folder = filepath.parent
+        save_folder = file_path.parent
     else:
         save_folder = pathlib.Path(save_folder)
-    if filepath.suffix not in ['.zip', '.tar', '.gz', '.tgz']:
-        return filepath
-    reader = data_reader.create_reader(filepath)
+    if file_path.suffix not in ['.zip', '.tar', '.gz', '.tgz']:
+        return save_folder
+    reader = data_reader.create_reader(file_path)
     compressed_files = set(reader.list_files())
     existed_files = set(data_reader.create_reader(save_folder).list_files())
     uncompressed_files = compressed_files.difference(existed_files)
     if len(uncompressed_files):
-        logging.info(f'Extracting {str(filepath)} to {str(save_folder.resolve())}')
+        logging.info(f'Extracting {str(file_path)} to {str(save_folder.resolve())}')
         for p in tqdm.tqdm(uncompressed_files):
             out = save_folder / p
             if not out.parent.exists(): out.parent.mkdir(parents=True)
@@ -120,51 +120,37 @@ def _download_kaggle(name: str, save_dir):
     if len(names) == 2:  # it's a dataset
         files = names[1].split(':')
         if len(files) == 2:
-            filepath = path/files[1]
-            if not filepath.exists():
+            file_path = path/files[1]
+            if not file_path.exists():
                 logging.info(f'Downloading {files[1]} form Kaggle dataset {names[0]}/{files[0]} into {str(path)}.')
             kaggle.api.dataset_download_file(name, files[1], path)
         else:
-            filepath = path/(names[-1]+'.zip')
-            if not filepath.exists():
+            file_path = path/(names[-1]+'.zip')
+            if not file_path.exists():
                 logging.info(f'Downloading Kaggle dataset {name} into {str(path)}.')
             kaggle.api.dataset_download_files(name, path)
-        return filepath
+        return file_path
     # it's a competition
     files = name.split(':')
     if len(files) == 2:
-        filepath = path/files[1]
-        if not filepath.exists():
+        file_path = path/files[1]
+        if not file_path.exists():
             logging.info(f'Downloading {files[1]} from Kaggle competition {files[0]} into {str(path)}.')
         kaggle.api.competition_download_file(files[0], files[1], path)
     else:
-        filepath = path/(name+'.zip')
-        if not filepath.exists():
+        file_path = path/(name+'.zip')
+        if not file_path.exists():
             logging.info(f'Downloading Kaggle competition {name} into {str(path)}.')
         kaggle.api.competition_download_files(name, path)
-    return filepath
+    return file_path
 
-
-# # TODO(mli) only check the first 1GB data for big datasets
-# def _get_sha1(filepath: pathlib.Path):
-#     if not filepath.exists():
-#         return None
-#     sha1 = hashlib.sha1()
-#     with filepath.open('rb') as f:
-#         while True:
-#             data = f.read(2**20)
-#             if not data:
-#                 break
-#             sha1.update(data)
-#     return sha1.hexdigest()
-
-def _get_xxhash(filepath: pathlib.Path):
-    if not filepath.exists():
+def _get_xxhash(file_path: pathlib.Path):
+    if not file_path.exists():
         return None
-    n = filepath.stat().st_size
+    n = file_path.stat().st_size
     x = xxhash.xxh128()
     m = 2 ** 23  # read 8MB each time
-    with filepath.open('rb') as f:
+    with file_path.open('rb') as f:
         if n < m * 128: # <= 1GB, check the whole data
             while True:
                 data = f.read(m)
@@ -178,30 +164,30 @@ def _get_xxhash(filepath: pathlib.Path):
                 x.update(f.read(m))
     return x.hexdigest()
 
-def _download_url(url: str, save_filepath: pathlib.Path, overwrite=False):
-    hash_filepath = pathlib.Path(str(save_filepath)+'.xxh')
-    if hash_filepath.exists() and save_filepath.exists() and not overwrite:
-        with hash_filepath.open('r') as f:
+def _download_url(url: str, save_file_path: pathlib.Path, overwrite=False):
+    hash_file_path = pathlib.Path(str(save_file_path)+'.xxh')
+    if hash_file_path.exists() and save_file_path.exists() and not overwrite:
+        with hash_file_path.open('r') as f:
             saved_hash = f.read().strip()
-            if saved_hash == _get_xxhash(save_filepath):
-                logging.debug(f'Found valid cache at {save_filepath}. Skip downloading.')
+            if saved_hash == _get_xxhash(save_file_path):
+                logging.debug(f'Found valid cache at {save_file_path}. Skip downloading.')
                 return
-    logging.info(f'Downloading {url} into {save_filepath.parent}')
-    if not save_filepath.parent.exists():
-        save_filepath.parent.mkdir(parents=True)
+    logging.info(f'Downloading {url} into {save_file_path.parent}')
+    if not save_file_path.parent.exists():
+        save_file_path.parent.mkdir(parents=True)
     r = requests.get(url, stream=True, verify=True)
     r.raise_for_status()
     total_size_in_bytes = int(r.headers.get('content-length', 0))
     progress_bar = tqdm.tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True)
     block_size = 2**20
-    with save_filepath.open('wb') as fb:
+    with save_file_path.open('wb') as fb:
         for chunk in r.iter_content(chunk_size=block_size):
             fb.write(chunk)
             progress_bar.update(len(chunk))
     progress_bar.close()
-    if progress_bar.n != total_size_in_bytes:
+    if progress_bar.n < total_size_in_bytes:
         logging.error(f'Only {progress_bar.n} bytes out of {total_size_in_bytes} bytes are downloaded.')
     else:
-        hash_value = _get_xxhash(save_filepath)
-        with hash_filepath.open('w') as f:
+        hash_value = _get_xxhash(save_file_path)
+        with hash_file_path.open('w') as f:
             f.write(hash_value+'\n')

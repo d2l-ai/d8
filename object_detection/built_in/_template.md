@@ -36,7 +36,7 @@ The number of examples for each class.
 
 ```{.python .input}
 #@hide_code
-ds.df.groupby('classname')['classname'].count().sort_values().plot.barh(
+ds.df.groupby('class_name')['class_name'].count().sort_values().plot.barh(
     figsize=(6, 2.5*len(ds.classes)/10));
 ```
 

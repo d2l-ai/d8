@@ -192,7 +192,7 @@ show('dtd')
 
 ## `from_label_func`
 
-The `from_label_func` method provides a more flexible way to construct a dataset. Similar to above we need to specify the name and URLs, but instead of root folders, now we pass a function that maps a filepath, a :class:`pathlib.Path` object, to a string class name.
+The `from_label_func` method provides a more flexible way to construct a dataset. Similar to above we need to specify the name and URLs, but instead of root folders, now we pass a function that maps a file_path, a :class:`pathlib.Path` object, to a string class name.
 
 Even sometimes the data format fits into `from_folders`, we may still use this method as it allows us to change the class names.
 
@@ -247,7 +247,7 @@ show('flower-10')
 
 ## `from_df_func`
 
-A `df_func` should return a Pandas DataFrame that contains at least two columns. One column is called `filepath`, containing the relative image file paths related to the root, the other column is called `classname`, containing the image labels. Let's look at example.
+A `df_func` should return a Pandas DataFrame that contains at least two columns. One column is called `file_path`, containing the relative image file paths related to the root, the other column is called `class_name`, containing the image labels. Let's look at example.
 
 ```{.python .input  n=5}
 ds = Dataset.get('boat')

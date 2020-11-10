@@ -5,14 +5,14 @@ from .base_dataset import BaseDataset, ClassificationDataset
 
 class TestBaseDataset(unittest.TestCase):
     def setUp(self):
-        self.df = pd.DataFrame({'filepath':[1,2,3,4,5,6]})
+        self.df = pd.DataFrame({'file_path':[1,2,3,4,5,6]})
         self.ds = BaseDataset(self.df)
 
     def test_split(self):
         a, b = self.ds.split(0.5)
         self.assertEqual(len(a), 3)
         self.assertEqual(len(b), 3)
-        self.assertEqual(a.df['filepath'].tolist(), [6, 3, 2])
+        self.assertEqual(a.df['file_path'].tolist(), [6, 3, 2])
 
         c, d = self.ds.split(0.5)
         self.assertTrue(c.df.equals(a.df))
@@ -28,7 +28,7 @@ class TestBaseDataset(unittest.TestCase):
     def test_merge(self):
         rets = self.ds.split([0.3, 0.4], shuffle=False)
         ds = rets[0].merge(*rets[1:])
-        self.assertTrue(ds.df['filepath'].equals(self.ds.df['filepath']))
+        self.assertTrue(ds.df['file_path'].equals(self.ds.df['file_path']))
 
 
     def test_add(self):
@@ -52,12 +52,12 @@ class TestBaseDataset(unittest.TestCase):
 
 class TestClassificationDataset(unittest.TestCase):
     def setUp(self):
-        self.df = pd.DataFrame({'classname':[1,2,3,1,2,3]})
+        self.df = pd.DataFrame({'class_name':[1,2,3,1,2,3]})
         self.ds = ClassificationDataset(self.df)
 
     def test_split(self):
         a, b = self.ds.split(0.8)
-        self.assertEqual(b.df['classname'].tolist(), [1,2])
+        self.assertEqual(b.df['class_name'].tolist(), [1,2])
         self.assertEqual(a.classes, [1,2,3])
         self.assertEqual(b.classes, [1,2,3])
 

@@ -23,8 +23,8 @@ from d8 import base_dataset
 
 @dataclasses.dataclass
 class BBox:
-    filepath: str
-    classname: str
+    file_path: str
+    class_name: str
     xmin: float
     ymin: float
     xmax: float
@@ -45,19 +45,19 @@ class BBox:
 def parse_voc_annotation(xml_fp) -> List[BBox]:
     root = ET.parse(xml_fp).getroot()
     get_text = lambda node: '' if node is None else node.text.strip()
-    filepath = get_text(root.find('filename'))
+    file_path = get_text(root.find('filename'))
     size = get_text(root.find('size'))
     width = float(get_text(size.find('width')))
     height = float(get_text(size.find('height')))
     labels = []
     for obj in root.iter('object'):
-        classname = get_text(obj.find('name')).lower()
+        class_name = get_text(obj.find('name')).lower()
         xml_box = get_text(obj.find('bndbox'))
         xmin = float(get_text(xml_box.find('xmin'))) / width
         ymin = float(get_text(xml_box.find('ymin'))) / height
         xmax = float(get_text(xml_box.find('xmax'))) / width
         ymax = float(get_text(xml_box.find('ymax'))) / height
-        label = BBox(filepath, classname, xmin, ymin, xmax, ymax)
+        label = BBox(file_path, class_name, xmin, ymin, xmax, ymax)
         label.project_bbox()
         if not label.is_bbox_valid():
             logging.warning(f'Invalid bounding box {label}')
@@ -76,11 +76,11 @@ def _parse_voc(reader, image_dir, annotation_dir):
     for xml in xmls:
         labels = parse_voc_annotation(reader.open(xml))
         if labels:
-            image_path = pathlib.Path(image_dir)/labels[0].filepath
+            image_path = pathlib.Path(image_dir)/labels[0].file_path
             if image_path not in imgs:
                 logging.warning(f'Not found image {limage_path}')
             else:
-                for l in labels: l.filepath = str(image_path)
+                for l in labels: l.file_path = str(image_path)
                 entries.extend(labels)
     return pd.DataFrame(entries)
 
@@ -98,7 +98,7 @@ class Dataset(base_dataset.ClassificationDataset):
         figsize = (ncols * scale, nrows * scale)
         _, axes = plt.subplots(nrows, ncols, figsize=figsize)
         random.seed(0)
-        samples = random.sample(list(self.df.groupby('filepath')), nrows*ncols)
+        samples = random.sample(list(self.df.groupby('file_path')), nrows*ncols)
         colors = ['b', 'g', 'r', 'm', 'c']
         class_to_color = {c:colors[i%len(colors)] for i, c in enumerate(self.classes)}
         for ax, sample in zip(axes.flatten(), samples):
@@ -111,11 +111,11 @@ class Dataset(base_dataset.ClassificationDataset):
                     xy=(row['xmin']*img_width, row['ymin']*img_height),
                     width=(row['xmax']-row['xmin'])*img_width,
                     height=(row['ymax']-row['ymin'])*img_height,
-                    fill=False, edgecolor=class_to_color[row['classname']], linewidth=2)
+                    fill=False, edgecolor=class_to_color[row['class_name']], linewidth=2)
                 ax.add_patch(bbox)
-                ax.text(bbox.xy[0], bbox.xy[1], row['classname'],
+                ax.text(bbox.xy[0], bbox.xy[1], row['class_name'],
                       va='center', ha='center', fontsize=7, color='w',
-                      bbox=dict(facecolor=class_to_color[row['classname']],
+                      bbox=dict(facecolor=class_to_color[row['class_name']],
                                 lw=0, alpha=1, pad=2))
 
     def summary(self):
@@ -123,11 +123,11 @@ class Dataset(base_dataset.ClassificationDataset):
         path = self._get_summary_path()
         if path and path.exists(): return pd.read_pickle(path)
         get_mean_std = lambda col: f'{col.mean():.1f} ± {col.std():.1f}'
-        img_df = self.reader.get_image_info(self.df['filepath'].unique())
-        merged_df = pd.merge(self.df, img_df, on='filepath')
+        img_df = self.reader.get_image_info(self.df['file_path'].unique())
+        merged_df = pd.merge(self.df, img_df, on='file_path')
         summary = pd.DataFrame([{'# images':len(img_df),
                                  '# bboxes':len(self.df),
-                                 '# bboxes / image':get_mean_std(self.df.groupby('filepath')['filepath'].count()),
+                                 '# bboxes / image':get_mean_std(self.df.groupby('file_path')['file_path'].count()),
                                  '# classes':len(self.classes),
                                  'image width':get_mean_std(img_df['width']),
                                  'image height':get_mean_std(img_df['height']),

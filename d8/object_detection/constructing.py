@@ -34,7 +34,7 @@ def stanford_dogs():
     for img in images:
         xml_fp = 'annotations/Annotation/'+img.parent.name+'/'+img.stem
         for label in dataset.parse_voc_annotation(reader.open(xml_fp)):
-            label.filepath = str(img)
+            label.file_path = str(img)
             entries.append(label)
     return Dataset(pd.DataFrame(entries), reader)
 
@@ -48,11 +48,11 @@ def wheat():
         xmin = bbox[0].str.strip('[ ').astype(float) / df.width
         ymin = bbox[1].str.strip(' ').astype(float) / df.height
         return pd.DataFrame({
-            'filepath':'train/'+df.image_id+'.jpg',
+            'file_path':'train/'+df.image_id+'.jpg',
             'xmin':xmin,
             'ymin':ymin,
             'xmax':bbox[2].str.strip(' ').astype(float) / df.width + xmin,
             'ymax':bbox[3].str.strip(' ]').astype(float) / df.height + ymin,
-            'classname':df.source})
+            'class_name':df.source})
     return Dataset.from_df_func('kaggle:global-wheat-detection', train_df_fn)
 

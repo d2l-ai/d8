@@ -148,7 +148,7 @@ class BaseDataset(object):
         names = []
         for name in cls.list():
             if quick:
-                ds = cls(pd.DataFrame([{'classname':'fack'}]), None, name)
+                ds = cls(pd.DataFrame([{'class_name':'fack'}]), None, name)
                 path = ds._get_summary_path()
                 if not path or not path.exists():
                     failed.append(name)
@@ -177,7 +177,7 @@ class ClassificationDataset(BaseDataset):
                  reader: Optional[data_reader.Reader] = None,
                  name: str = ''):
         super().__init__(df, reader, name)
-        self.classes = sorted(self.df['classname'].unique().tolist())
+        self.classes = sorted(self.df['class_name'].unique().tolist())
 
     def split(self, frac: Union[float, Sequence[float]], shuffle: bool = True, seed: int = 0):
         """Split a dataset into two.
