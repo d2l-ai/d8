@@ -2,7 +2,7 @@ dependencies:
     - python=3.7
     - pip
     - pip:
-      - ..  # d8
+      - .  # d8
       - git+https://github.com/d2l-ai/d2l-book
       - mxnet
       - mypy
