@@ -126,7 +126,7 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(ds.classes, ['Bishop', 'King', 'Knight', 'Pawn', 'Queen', 'Rook'])
         items = ds[10]
         self.assertEqual(len(items), 2)
-        self.assertEqual(items[0].shape, (1024, 683, 3))
+        self.assertEqual(items[0].shape[2], 3)
         self.assertEqual(items[1], 'Bishop')
 
 if __name__ == '__main__':
