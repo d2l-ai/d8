@@ -1,4 +1,82 @@
 # The `dataset` class
+:label:`object_detection_api`
+
+
+```eval_rst
+
+.. currentmodule:: d8.object_detection
+
+.. autoclass:: Dataset
+
+```
+
+## Adding and Getting Datasets
+
+The following functions list, add and get these datasets.
+
+```eval_rst
+
+.. autosummary::
+
+   Dataset.list
+   Dataset.get
+   Dataset.add
+
+```
+
+## Constructing a Dataset
+
+We often construct a new dataset using one of the following class methods.
+
+
+```eval_rst
+
+.. autosummary::
+
+   Dataset.from_voc
+   Dataset.from_df_func
+
+```
+
+
+## Manipulating a Dataset
+
+These functions manipulate a dataset.
+
+```eval_rst
+
+.. autosummary::
+
+   Dataset.split
+   Dataset.merge
+
+```
+
+
+## Visualizing a Dataset
+
+These functions let you have a peak about a dataset.
+
+```eval_rst
+
+.. autosummary::
+
+   Dataset.show
+   Dataset.summary
+   Dataset.summary_all
+
+```
+
+## `Dataset`
+
+```eval_rst
+
+.. autoclass:: d8.object_detection.Dataset
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+```
 
 ```{.python .input}
 #@save_all

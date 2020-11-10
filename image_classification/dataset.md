@@ -1,4 +1,5 @@
 # The `Dataset` class
+:label:`image_classification_api`
 
 ```eval_rst
 
@@ -11,7 +12,7 @@
 
 ## Adding and Getting Datasets
 
-The following functions list, add and get these datasts.
+The following functions list, add and get these datasets.
 
 ```eval_rst
 
@@ -27,7 +28,6 @@ The following functions list, add and get these datasts.
 ## Constructing a Dataset
 
 We often construct a new dataset using one of the following class methods.
-You could find examples from :ref:`sec_image_classification`.
 
 ```eval_rst
 
