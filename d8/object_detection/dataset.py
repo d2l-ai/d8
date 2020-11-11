@@ -138,11 +138,11 @@ class Dataset(base_dataset.ClassificationDataset):
         return summary
 
     @classmethod
-    def from_voc(cls, datapath: str,
+    def from_voc(cls, data_path: str,
                  image_folders: str, annotation_folders: str):
         """Create a dataset when data are stored in the VOC format.
 
-        :param datapath: Either a URL or a local path. For the former, data will be downloaded automatically.
+        :param data_path: Either a URL or a local path. For the former, data will be downloaded automatically.
         :param folders: The folders containing all example images.
         :return: The created dataset.
         """
@@ -155,7 +155,7 @@ class Dataset(base_dataset.ClassificationDataset):
                     dfs.append(_parse_voc(reader, image_folder, annotation_folder))
                 return pd.concat(dfs, axis=0)
             return df_func
-        return cls.from_df_func(datapath, get_df_func(listify(image_folders), listify(annotation_folders)))
+        return cls.from_df_func(data_path, get_df_func(listify(image_folders), listify(annotation_folders)))
 
     @classmethod
     def summary_all(cls, quick=False):

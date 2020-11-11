@@ -172,10 +172,10 @@ class Dataset(base_dataset.ClassificationDataset):
         return MXDataset(self)
 
     @classmethod
-    def from_folders(cls, datapath: str, folders: Union[str, Sequence[str]]) -> 'Dataset':
+    def from_folders(cls, data_path: str, folders: Union[str, Sequence[str]]) -> 'Dataset':
         """Create a dataset when images from the same class are stored in the same folder.
 
-        :param datapath: Either a URL or a local path. For the former, data will be downloaded automatically.
+        :param data_path: Either a URL or a local path. For the former, data will be downloaded automatically.
         :param folders: The folders containing all example images.
         :return: The created dataset.
         """
@@ -185,17 +185,17 @@ class Dataset(base_dataset.ClassificationDataset):
                 if fnmatch.fnmatch(str(file_path.parent.parent), folder):
                     return file_path.parent.name
             return None
-        return cls.from_label_func(datapath, label_func)
+        return cls.from_label_func(data_path, label_func)
 
     @classmethod
-    def from_label_func(cls, datapath: str,
+    def from_label_func(cls, data_path: str,
                         label_func: Callable[[pathlib.Path], str]) -> 'Dataset':
         """Create a dataset from a function that maps a image path to its class name.
 
-        :param datapath: Either a URL or a local path. For the former, data will be downloaded automatically.
+        :param data_path: Either a URL or a local path. For the former, data will be downloaded automatically.
         :param label_func: A function takes an image path (an instance :class:`pathlib.Path`) to return a string class name or a None to skip this image.
         :return: The created dataset.
-        :param datapath:
+        :param data_path:
         """
         def get_df(reader):
             entries = []
@@ -203,7 +203,7 @@ class Dataset(base_dataset.ClassificationDataset):
                 lbl = label_func(file_path)
                 if lbl: entries.append({'file_path':file_path, 'class_name':lbl})
             return pd.DataFrame(entries)
-        return cls.from_df_func(datapath, get_df)
+        return cls.from_df_func(data_path, get_df)
 
     @classmethod
     def summary_all(cls, quick=False):

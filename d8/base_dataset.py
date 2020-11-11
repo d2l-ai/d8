@@ -118,25 +118,25 @@ class BaseDataset(object):
         return [name for typ, name in cls._DATASETS if typ == cls.TYPE]
 
     @classmethod
-    def create_reader(cls, datapath: Union[str, Sequence[str]], name: Optional[str]=None) -> data_reader.Reader:
-        def download(datapath):
-            return [(p if pathlib.Path(p).exists() else data_downloader.download(p, extract=True)) for p in datapath]
+    def create_reader(cls, data_path: Union[str, Sequence[str]], name: Optional[str]=None) -> data_reader.Reader:
+        def download(data_path):
+            return [(p if pathlib.Path(p).exists() else data_downloader.download(p, extract=True)) for p in data_path]
         if name:
             with data_downloader.NameContext(name):
-                datapath = download(_listify(datapath))
+                data_path = download(_listify(data_path))
         else:
-            datapath = download(_listify(datapath))
-        return data_reader.create_reader(datapath)
+            data_path = download(_listify(data_path))
+        return data_reader.create_reader(data_path)
 
     @classmethod
-    def from_df_func(cls: Type[_T], datapath: Optional[Union[str, Sequence[str]]],
+    def from_df_func(cls: Type[_T], data_path: Optional[Union[str, Sequence[str]]],
                      df_func: Callable[[data_reader.Reader], pd.DataFrame]) -> _T:
         """Create a dataset from a dataframe function.
 
-        :param datapath: A remote URL (data will be downloaded automatically) or a local datapath, or a list of them
+        :param data_path: A remote URL (data will be downloaded automatically) or a local data_path, or a list of them
         :param df_func: A function takes `self.reader` as its input to return the dataframe.
         """
-        reader = cls.create_reader(datapath)
+        reader = cls.create_reader(data_path)
         return cls(df_func(reader), reader)
 
     def summary(self) -> pd.DataFrame:
