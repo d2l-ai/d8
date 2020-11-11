@@ -27,7 +27,7 @@ stage("Build and Publish") {
       conda activate ${ENV_NAME}
       d2lbook build outputcheck
       python -m unittest d8/*.py d8/**/*.py
-      mypy --ignore-missing-imports d8/*.py
+      # mypy --ignore-missing-imports d8/*.py
       """
 
       sh label: "Execute Notebooks", script: """set -ex
