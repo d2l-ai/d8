@@ -39,7 +39,7 @@ def current_name():
     :Example:
 
     >>> with NameContext('my_name'):
-    >>>   print(current_name)
+    >>>   print(current_name())
     my_name
     """
 

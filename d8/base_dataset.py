@@ -4,6 +4,8 @@ from . import data_reader
 from . import data_downloader
 import pathlib
 import logging
+from matplotlib import pyplot as plt
+
 
 _listify = lambda x: [] if not x else (list(x) if isinstance(x, (tuple, list)) else [x])
 
@@ -116,6 +118,17 @@ class BaseDataset(object):
         return [name for typ, name in cls._DATASETS if typ == cls.TYPE]
 
     @classmethod
+    def create_reader(cls, datapath: Union[str, Sequence[str]], name: Optional[str]=None) -> data_reader.Reader:
+        def download(datapath):
+            return [(p if pathlib.Path(p).exists() else data_downloader.download(p, extract=True)) for p in datapath]
+        if name:
+            with data_downloader.NameContext(name):
+                datapath = download(_listify(datapath))
+        else:
+            datapath = download(_listify(datapath))
+        return data_reader.create_reader(datapath)
+
+    @classmethod
     def from_df_func(cls: Type[_T], datapath: Optional[Union[str, Sequence[str]]],
                      df_func: Callable[[data_reader.Reader], pd.DataFrame]) -> _T:
         """Create a dataset from a dataframe function.
@@ -123,9 +136,7 @@ class BaseDataset(object):
         :param datapath: A remote URL (data will be downloaded automatically) or a local datapath, or a list of them
         :param df_func: A function takes `self.reader` as its input to return the dataframe.
         """
-        datapath = _listify(datapath)
-        datapath = [(p if pathlib.Path(p).exists() else data_downloader.download(p, extract=True)) for p in datapath]
-        reader = data_reader.create_reader(datapath)
+        reader = cls.create_reader(datapath)
         return cls(df_func(reader), reader)
 
     def summary(self) -> pd.DataFrame:
@@ -188,3 +199,15 @@ class ClassificationDataset(BaseDataset):
         rets = super().split(frac, shuffle, seed)
         for r in rets: r.classes = self.classes  # type: ignore
         return rets
+
+def show_images(images, layout, scale):
+    nrows, ncols = layout
+    if len(images) != nrows * ncols:
+        raise ValueError(f'Cannot layout f{len(images)} images to f{nrows} rows and f{ncols} columns')
+    figsize = (ncols * scale, nrows * scale)
+    _, axes = plt.subplots(nrows, ncols, figsize=figsize)
+    axes = axes.flatten()
+    for ax, img in zip(axes, images):
+        ax.imshow(img)
+        ax.axis("off")
+    return axes

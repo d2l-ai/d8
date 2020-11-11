@@ -35,16 +35,17 @@ the problem type you are interested.
         |nbsp| |nbsp| |nbsp| |nbsp| |nbsp| |nbsp| |nbsp|
         |nbsp| |nbsp| |nbsp| |nbsp| |nbsp| |nbsp| |nbsp|
 
-
-
-
-
     .. card::
         :title: Object Detection
         :link: object_detection/getting_started.html
 
         Datasets to detect multiple objects with their bounding boxes in an image.
 
+    .. card::
+        :title: Semantic Segmentation
+        :link: semantic_segmentation/dataset.html
+
+        Datasets to associate each pixel of an image with a categorical label.
 
 ```
 
