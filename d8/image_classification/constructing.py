@@ -10,7 +10,7 @@ from d8.image_classification import Dataset
 from_folders_meta: Sequence[Dict[str, Union[Sequence[str], str]]] = [
     {'name' : 'ibeans',
      'url'  : [f'https://storage.googleapis.com/ibeans/{part}.zip' for part in ('train', 'validation', 'test')],
-     'root' : ('*/train', '*/validation', '*/test')},
+     'root' : '*'},
     {'name' : 'boat',
      'url'  : 'kaggle:clorichel/boat-types-recognition',
      'root' : '.'},
