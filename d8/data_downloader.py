@@ -118,12 +118,12 @@ def _download_kaggle(name: str, save_dir):
     names = name.split('/')
     path = DATAROOT/save_dir
     if len(names) == 2:  # it's a dataset
-        files = names[1].split(':')
+        files = name.split(':')
         if len(files) == 2:
             file_path = path/files[1]
             if not file_path.exists():
                 logging.info(f'Downloading {files[1]} form Kaggle dataset {names[0]}/{files[0]} into {str(path)}.')
-            kaggle.api.dataset_download_file(name, files[1], path)
+            kaggle.api.dataset_download_file(files[0], files[1], path)
         else:
             file_path = path/(names[-1]+'.zip')
             if not file_path.exists():

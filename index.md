@@ -56,5 +56,6 @@ the problem type you are interested.
 
 image_classification/index
 object_detection/index
-api/index
+semantic_segmentation/index
+tabular_classification/index
 ```

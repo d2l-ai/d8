@@ -6,8 +6,10 @@ import pathlib
 import logging
 from matplotlib import pyplot as plt
 
+_E = TypeVar("_E")
 
-_listify = lambda x: [] if not x else (list(x) if isinstance(x, (tuple, list)) else [x])
+def listify(x: Optional[Union[_E, Sequence[_E]]]) -> Sequence[_E]:
+    return [] if not x else (list(x) if isinstance(x, (tuple, list)) else [x])
 
 _T = TypeVar("_T", bound='BaseDataset')
 
@@ -57,7 +59,7 @@ class BaseDataset(object):
         :return: A list of datasets, each has the same type as this instance.
         """
         df = self.df.sample(frac=1, random_state=seed) if shuffle else self.df
-        frac = _listify(frac)
+        frac = listify(frac)
         if sum(frac) >= 1:
             raise ValueError(f'the sum of frac {sum(frac)} should be less than 1')
         frac = frac + [1.0 - sum(frac)]
@@ -81,7 +83,7 @@ class BaseDataset(object):
             if ds.reader != self.reader:
                 raise ValueError('You cannot merge with another dataset with a different reader')
             dfs.append(ds.df)
-        return self.__class__(pd.concat(dfs, axis=0).reset_index(), self.reader, self.name+'.merged')
+        return self.__class__(pd.concat(dfs, axis=0, ignore_index=True), self.reader, self.name+'.merged')
 
     @classmethod
     def add(cls, entry, *args) -> None:
@@ -123,9 +125,9 @@ class BaseDataset(object):
             return [(p if pathlib.Path(p).exists() else data_downloader.download(p, extract=True)) for p in data_path]
         if name:
             with data_downloader.NameContext(name):
-                data_path = download(_listify(data_path))
+                data_path = download(listify(data_path))
         else:
-            data_path = download(_listify(data_path))
+            data_path = download(listify(data_path))
         return data_reader.create_reader(data_path)
 
     @classmethod
