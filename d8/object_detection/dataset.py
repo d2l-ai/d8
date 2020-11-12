@@ -46,13 +46,13 @@ def parse_voc_annotation(xml_fp) -> List[BBox]:
     root = ET.parse(xml_fp).getroot()
     get_text = lambda node: '' if node is None else node.text.strip()
     file_path = get_text(root.find('filename'))
-    size = get_text(root.find('size'))
+    size = root.find('size')
     width = float(get_text(size.find('width')))
     height = float(get_text(size.find('height')))
     labels = []
     for obj in root.iter('object'):
         class_name = get_text(obj.find('name')).lower()
-        xml_box = get_text(obj.find('bndbox'))
+        xml_box = obj.find('bndbox')
         xmin = float(get_text(xml_box.find('xmin'))) / width
         ymin = float(get_text(xml_box.find('ymin'))) / height
         xmax = float(get_text(xml_box.find('xmax'))) / width

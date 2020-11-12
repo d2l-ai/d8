@@ -1,6 +1,6 @@
 # Getting Started
 
-```{.python .input}
+```{.python .input  n=1}
 #@hide
 %load_ext autoreload
 %autoreload 2
@@ -27,14 +27,14 @@ You can see that it must contain 6 columns ...
 
 Next, here is a list of examples how to prepare various detection datasets,mm
 
-```{.python .input}
+```{.python .input  n=2}
 from d8.object_detection import Dataset
 
 names = Dataset.list()
 len(names), names[:5]
 ```
 
-```{.python .input}
+```{.python .input  n=4}
 ds = Dataset.get('sheep')
 ds.summary()
 ```
@@ -46,4 +46,3 @@ ds.show()
 ```{.python .input}
 Dataset.summary_all(quick=True)
 ```
-

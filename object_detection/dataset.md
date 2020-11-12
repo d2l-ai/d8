@@ -1,7 +1,6 @@
 # The `dataset` class
 :label:`object_detection_api`
 
-
 ```eval_rst
 
 .. currentmodule:: d8.object_detection
@@ -9,6 +8,7 @@
 .. autoclass:: Dataset
 
 ```
+
 
 ## Adding and Getting Datasets
 
@@ -24,10 +24,10 @@ The following functions list, add and get these datasets.
 
 ```
 
+
 ## Constructing a Dataset
 
 We often construct a new dataset using one of the following class methods.
-
 
 ```eval_rst
 
@@ -67,6 +67,7 @@ These functions let you have a peak about a dataset.
 
 ```
 
+
 ## `Dataset`
 
 ```eval_rst
@@ -77,6 +78,7 @@ These functions let you have a peak about a dataset.
    :inherited-members:
 
 ```
+
 
 ```{.python .input}
 #@save_all
@@ -125,13 +127,13 @@ def parse_voc_annotation(xml_fp) -> List[BBox]:
     root = ET.parse(xml_fp).getroot()
     get_text = lambda node: '' if node is None else node.text.strip()
     file_path = get_text(root.find('filename'))
-    size = get_text(root.find('size'))
+    size = root.find('size')
     width = float(get_text(size.find('width')))
     height = float(get_text(size.find('height')))
     labels = []
     for obj in root.iter('object'):
         class_name = get_text(obj.find('name')).lower()
-        xml_box = get_text(obj.find('bndbox'))
+        xml_box = obj.find('bndbox')
         xmin = float(get_text(xml_box.find('xmin'))) / width
         ymin = float(get_text(xml_box.find('ymin'))) / height
         xmax = float(get_text(xml_box.find('xmax'))) / width
