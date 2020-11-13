@@ -87,17 +87,17 @@ root/dog/123.png
 Using the [Kaggle  boat dataset](https://www.kaggle.com/clorichel/boat-types-recognition) as an example. If you check the `Data Explorer` panel in the page, you will find there are 9 folders, such as `buoy` and
 `cruise ship`, in the top directory.
 
-![Kaggle boat dataset file structure](../img/kaggle_boat.png)
+![Kaggle boat dataset file structure](../static/kaggle_boat.png)
 :width:`600px`
 
 
-Now we can construct the dataset through the class method `from_folders` by passing the dataset URL `'kaggle:clorichel/boat-types-recognition'` and root directory `'.'`  as arguments. Here the URL format is a `kaggle:` prefix followed by the user name and dataset name. Its data will be automatically downloaded. You can specify a normal URL such as `http://example.com/data.zip` or a local file/folder.
+Now we can construct the dataset through the class method `from_folders` by passing the dataset URL `'kaggle://clorichel/boat-types-recognition'` and root directory `'.'`  as arguments. Here the URL format is a `kaggle://` prefix followed by the user name and dataset name. Its data will be automatically downloaded. You can specify a normal URL such as `http://example.com/data.zip` or a local file/folder.
 
 The following code register the dataset with the name `boat` by given its construction function and arguments. We can obtain it by `Dataset.get('boat')` as demonstrated before.
 
 ```{.python .input}
 Dataset.add('boat', Dataset.from_folders,
-            ['kaggle:clorichel/boat-types-recognition', '.'])
+            ['kaggle://clorichel/boat-types-recognition', '.'])
 ```
 
 Besides `from_folders`, there are other convenient methods to construct datasets. You can check how we constructed all the built-in datasets in :ref:`image_classification_constructing`.

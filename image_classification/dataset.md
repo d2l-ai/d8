@@ -217,7 +217,7 @@ class TestDataset(unittest.TestCase):
 
     def test_from_folders(self):
         Dataset.add('chessman_test', Dataset.from_folders,
-                     ['kaggle:niteshfre/chessman-image-dataset', '*'])
+                     ['kaggle://niteshfre/chessman-image-dataset', '*'])
         ds = Dataset.get('chessman_test')
         self.assertEqual(len(ds.df), 552)
         self.assertEqual(ds.classes, ['Bishop', 'King', 'Knight', 'Pawn', 'Queen', 'Rook'])

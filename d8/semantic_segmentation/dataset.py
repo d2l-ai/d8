@@ -1,21 +1,12 @@
-# The `Dataset` API
+# This file is generated from semantic_segmentation/dataset.md automatically through:
+#    d2lbook build lib
+# Don't edit it directly
 
-
-```{.python .input}
-%load_ext autoreload
-%autoreload 2
-```
-
-```{.python .input}
-#@save
 from typing import Union, Sequence, Callable, Dict, Tuple, Optional
 from d8 import base_dataset, data_reader
 import pandas as pd
 import pathlib
-```
 
-```{.python .input}
-#@save
 class Dataset(base_dataset.BaseDataset):
     def __init__(self,
                  df: pd.DataFrame,
@@ -56,30 +47,4 @@ class Dataset(base_dataset.BaseDataset):
         img = self.reader.read_image(img_path)
         lbl = self.reader.read_image(lbl_path)
         return np.array(img), np.array(lbl)
-```
 
-```{.python .input}
-def camseq01_class_mapping(reader):
-    maps = []
-    with reader.open('label_colors.txt') as f:
-        lines = f.readlines()
-    for line in lines:
-        line = line.decode().strip().replace('\t\t', '\t')
-        if not line: continue
-        pixels, label = line.split('\t')
-        pixels = tuple([int(p) for p in pixels.split(' ')])
-        maps.append((pixels, label))
-    return dict(maps)
-```
-
-```{.python .input}
-#'http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamSeq01/CamSeq01.zip',
-Dataset.add('camseq01', Dataset.from_label_func,
-            [['kaggle://carlolepelaars/camseq-semantic-segmentation',
-              'http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamSeq01/label_colors.txt'],
-             lambda p: None if '_L' in str(p) else pathlib.Path(p.stem+'_L'+p.suffix),
-             camseq01_class_mapping])
-
-ds = Dataset.get('camseq01')
-ds.show()
-```

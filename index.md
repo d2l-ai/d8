@@ -58,4 +58,5 @@ image_classification/index
 object_detection/index
 semantic_segmentation/index
 tabular_classification/index
+core/index
 ```

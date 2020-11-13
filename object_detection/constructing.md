@@ -73,7 +73,7 @@ import pandas as pd
 
 @Dataset.add
 def stanford_dogs():
-    reader = ad.create_reader(ad.download('kaggle:jessicali9530/stanford-dogs-dataset'))
+    reader = ad.create_reader(ad.download('kaggle://jessicali9530/stanford-dogs-dataset'))
     images = reader.list_images()
     entries = []
     for img in images:
@@ -107,7 +107,7 @@ def wheat():
             'xmax':bbox[2].str.strip(' ').astype(float) / df.width + xmin,
             'ymax':bbox[3].str.strip(' ]').astype(float) / df.height + ymin,
             'class_name':df.source})
-    return Dataset.from_df_func('kaggle:global-wheat-detection', train_df_fn)
+    return Dataset.from_df_func('kaggle://global-wheat-detection', train_df_fn)
 ```
 
 ```{.python .input  n=13}

@@ -63,9 +63,9 @@ def download(url: str,
     >>> download('https://d8.github.io/docs/object_detection/index.html', 'detection')
     PosixPath('/home/ubuntu/.d8/detection/index.html')
 
-    This function also supports to download a Kaggle competition or dataset, the format is ``kaggle:name`` for a competition, and ``kaggle:user/name`` for a dataset.
+    This function also supports to download a Kaggle competition or dataset, the format is ``kaggle://name`` for a competition, and ``kaggle://user/name`` for a dataset.
 
-    >>> download('kaggle:house-prices-advanced-regression-techniques')
+    >>> download('kaggle://house-prices-advanced-regression-techniques')
     PosixPath('/home/ubuntu/.d8/house-prices-advanced-regression-techniques.zip')
 
     :param url: The URL to be downloaded.
@@ -75,8 +75,8 @@ def download(url: str,
     # if isinstance(url, list) or isinstance(url, tuple):
     #     return [download(u, save_dir) for u in url]
     if save_dir is None: save_dir = current_name()
-    if url.startswith('kaggle:'):
-        save_file_path =  _download_kaggle(url[7:], save_dir)
+    if url.startswith('kaggle://'):
+        save_file_path =  _download_kaggle(url[9:], save_dir)
     else:
         save_file_path = DATAROOT/save_dir/url.split('/')[-1]
         _download_url(url, save_file_path)
@@ -115,33 +115,45 @@ def _download_kaggle(name: str, save_dir):
         for kp in kps:
             os.environ[kp[0][::2]+kp[0][1::2]] = kp[1][::2]+kp[1][1::2]
         import kaggle
+    if ' ' in name: name = name.replace(' ', '%20')
     names = name.split('/')
     path = DATAROOT/save_dir
     if len(names) == 2:  # it's a dataset
-        files = name.split(':')
+        files = name.split('#')
         if len(files) == 2:
+            # download a file
             file_path = path/files[1]
             if not file_path.exists():
-                logging.info(f'Downloading {files[1]} form Kaggle dataset {names[0]}/{files[0]} into {str(path)}.')
-            kaggle.api.dataset_download_file(files[0], files[1], path)
+                logging.info(f'Downloading {files[1]} from Kaggle dataset {names[0]}/{files[0]} into {str(path)}.')
+                kaggle.api.dataset_download_file(files[0], files[1], path)
+            if not file_path.exists():
+                file_path = path/(files[1]+'.zip')
         else:
             file_path = path/(names[-1]+'.zip')
             if not file_path.exists():
                 logging.info(f'Downloading Kaggle dataset {name} into {str(path)}.')
-            kaggle.api.dataset_download_files(name, path)
-        return file_path
-    # it's a competition
-    files = name.split(':')
-    if len(files) == 2:
-        file_path = path/files[1]
-        if not file_path.exists():
-            logging.info(f'Downloading {files[1]} from Kaggle competition {files[0]} into {str(path)}.')
-        kaggle.api.competition_download_file(files[0], files[1], path)
+                kaggle.api.dataset_download_files(name, path)
     else:
-        file_path = path/(name+'.zip')
-        if not file_path.exists():
-            logging.info(f'Downloading Kaggle competition {name} into {str(path)}.')
-        kaggle.api.competition_download_files(name, path)
+        # it's a competition
+        files = name.split('#')
+        if len(files) == 2:
+            # download a file
+            file_path = path/files[1]
+            if not file_path.exists():
+                logging.info(f'Downloading {files[1]} from Kaggle competition {files[0]} into {str(path)}.')
+                kaggle.api.competition_download_file(files[0], files[1], path)
+            if not file_path.exists():
+                file_path = path/(files[1]+'.zip')
+        else:
+            file_path = path/(name+'.zip')
+            if not file_path.exists():
+                logging.info(f'Downloading Kaggle competition {name} into {str(path)}.')
+                kaggle.api.competition_download_files(name, path)
+    print(file_path)
+    if ' ' in str(file_path):
+        download_file_path = pathlib.Path(str(file_path).replace(' ', '%20'))
+        print(download_file_path)
+        download_file_path.rename(file_path)
     return file_path
 
 def _get_xxhash(file_path: pathlib.Path):
