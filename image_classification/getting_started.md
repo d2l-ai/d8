@@ -97,7 +97,7 @@ The following code register the dataset with the name `boat` by given its constr
 
 ```{.python .input}
 Dataset.add('boat', Dataset.from_folders,
-            ['kaggle://clorichel/boat-types-recognition', '.'])
+            ['https://www.kaggle.com/clorichel/boat-types-recognition', '.'])
 ```
 
 Besides `from_folders`, there are other convenient methods to construct datasets. You can check how we constructed all the built-in datasets in :ref:`image_classification_constructing`.

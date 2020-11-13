@@ -100,16 +100,29 @@ These functions export a `d8` dataset into dataset formats for various libraries
 import pathlib
 import pandas as pd
 from matplotlib import pyplot as plt
-from typing import Union, Sequence, Callable
+from typing import Union, Sequence, Callable, Optional
 import fnmatch
 import numpy as np
 import unittest
 
-from d8 import base_dataset
+from d8 import core
 ```
 
 ```{.python .input  n=8}
-class Dataset(base_dataset.ClassificationDataset):
+class Dataset(core.BaseDataset):
+    """The class of an image classification dataset.
+
+    Additional variables added besides :py:class:`core.BaseDataset`
+
+    :ivar classes: The list of unique classes, each one is a string.
+    """
+    def __init__(self,
+                 df: pd.DataFrame,
+                 reader: Optional[core.Reader] = None,
+                 name: str = ''):
+        super().__init__(df, reader, name)
+        self.classes = sorted(self.df['class_name'].unique().tolist())
+
     TYPE = 'image_classification'
 
     def show(self, layout=(2,8)) -> None:
@@ -205,6 +218,10 @@ class Dataset(base_dataset.ClassificationDataset):
             return pd.DataFrame(entries)
         return cls.from_df_func(data_path, get_df)
 
+    def split(self, frac: Union[float, Sequence[float]], shuffle: bool = True, seed: int = 0):
+        rets = super().split(frac, shuffle, seed)
+        for r in rets: r.classes = self.classes  # type: ignore
+        return rets
 ```
 
 ```{.python .input}
@@ -212,7 +229,7 @@ class TestDataset(unittest.TestCase):
 
     def test_from_folders(self):
         Dataset.add('chessman_test', Dataset.from_folders,
-                     ['kaggle://niteshfre/chessman-image-dataset', '*'])
+                     ['https://www.kaggle.com/niteshfre/chessman-image-dataset', '*'])
         ds = Dataset.get('chessman_test')
         self.assertEqual(len(ds.df), 552)
         self.assertEqual(ds.classes, ['Bishop', 'King', 'Knight', 'Pawn', 'Queen', 'Rook'])
@@ -222,6 +239,9 @@ class TestDataset(unittest.TestCase):
 ```
 
 ```{.python .input}
+%load_ext mypy_ipython
+%mypy 
+
 if __name__ == '__main__':
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
 ```
