@@ -1,22 +1,28 @@
 # Base Datasets
 
+```eval_rst
+
+.. currentmodule:: d8.core
+
+.. autoclass:: BaseDataset
+
+```
+
+
 ```{.python .input  n=1}
 #@save_all
+#@hide_all
 from typing import Optional, Union, Callable, Tuple, Sequence, List, Type, TypeVar
 import pandas as pd
-from d8 import data_reader
-from d8 import data_downloader
+from d8 import core 
 import pathlib
 import logging
 from matplotlib import pyplot as plt
+
+__all__ = ['BaseDataset', 'show_images']
 ```
 
-```{.python .input}
-_E = TypeVar("_E")
-
-def listify(x: Optional[Union[_E, Sequence[_E]]]) -> Sequence[_E]:
-    return [] if not x else (list(x) if isinstance(x, (tuple, list)) else [x])
-
+```{.python .input  n=2}
 _T = TypeVar("_T", bound='BaseDataset')
 
 class BaseDataset(object):
@@ -35,7 +41,7 @@ class BaseDataset(object):
     """
     def __init__(self,
                  df: pd.DataFrame,
-                 reader: Optional[data_reader.Reader] = None,
+                 reader: Optional[core.Reader] = None,
                  name: str = '') -> None:
         if not isinstance(df, pd.DataFrame):
             raise TypeError(f'{type(df)} is a not pandas DataFrame')
@@ -43,7 +49,7 @@ class BaseDataset(object):
         if len(self.df) == 0:
             logging.warning('No example is found as `df` is empty.')
             logging.warning('You may use `ds.reader.list_files()` to check all files.')
-        self.reader = data_reader.EmptyReader() if reader is None else reader
+        self.reader = core.EmptyReader() if reader is None else reader
         self.name = name
 
     TYPE = ''
@@ -65,15 +71,15 @@ class BaseDataset(object):
         :return: A list of datasets, each has the same type as this instance.
         """
         df = self.df.sample(frac=1, random_state=seed) if shuffle else self.df
-        frac = listify(frac)
-        if sum(frac) >= 1:
-            raise ValueError(f'the sum of frac {sum(frac)} should be less than 1')
-        frac = frac + [1.0 - sum(frac)]
+        fracs = core.listify(frac)
+        if sum(fracs) >= 1:
+            raise ValueError(f'the sum of frac {sum(fracs)} should be less than 1')
+        fracs = fracs + [1.0 - sum(fracs)]
         rets = []
         s = 0
-        for i, f in enumerate(frac):
+        for i, f in enumerate(fracs):
             if f <= 0: raise ValueError(f'frac {f} is not in (0, 1)')
-            e = int(sum(frac[:(i+1)]) * len(df))
+            e = int(sum(fracs[:(i+1)]) * len(df))
             rets.append(self.__class__(df.iloc[s:e].reset_index(), self.reader, f'{self.name}.{i}'))
             s = e
         return rets
@@ -114,7 +120,7 @@ class BaseDataset(object):
     @classmethod
     def get(cls, name: str) -> 'BaseDataset':
         """Return the dataset by its name."""
-        with data_downloader.NameContext(name):
+        with core.NameContext(name):
             (fn, fn_args, fn_kwargs) = cls._DATASETS[(cls.TYPE, name)]
             ds = fn(*fn_args, **fn_kwargs)
             ds.name = name
@@ -126,19 +132,19 @@ class BaseDataset(object):
         return [name for typ, name in cls._DATASETS if typ == cls.TYPE]
 
     @classmethod
-    def create_reader(cls, data_path: Union[str, Sequence[str]], name: Optional[str]=None) -> data_reader.Reader:
+    def create_reader(cls, data_path: Optional[Union[str, Sequence[str]]], name: Optional[str]=None) -> core.Reader:
         def download(data_path):
-            return [(p if pathlib.Path(p).exists() else data_downloader.download(p, extract=True)) for p in data_path]
+            return [(p if pathlib.Path(p).exists() else core.download(p, extract=True)) for p in data_path]
         if name:
-            with data_downloader.NameContext(name):
-                data_path = download(listify(data_path))
+            with core.NameContext(name):
+                data_path = download(core.listify(data_path))
         else:
-            data_path = download(listify(data_path))
-        return data_reader.create_reader(data_path)
+            data_path = download(core.listify(data_path))
+        return core.create_reader(data_path)
 
     @classmethod
     def from_df_func(cls: Type[_T], data_path: Optional[Union[str, Sequence[str]]],
-                     df_func: Callable[[data_reader.Reader], pd.DataFrame]) -> _T:
+                     df_func: Callable[[core.Reader], pd.DataFrame]) -> _T:
         """Create a dataset from a dataframe function.
 
         :param data_path: A remote URL (data will be downloaded automatically) or a local data_path, or a list of them
@@ -153,7 +159,7 @@ class BaseDataset(object):
 
     def _get_summary_path(self) -> Optional[pathlib.Path]:
         if not self.name: return None
-        return pathlib.Path(data_downloader.DATAROOT/self.name/f'{self.TYPE}_summary.pkl')
+        return pathlib.Path(core.DATAROOT/self.name/f'{self.TYPE}_summary.pkl')
 
     @classmethod
     def summary_all(cls, quick: bool=False) -> pd.DataFrame:
@@ -167,7 +173,7 @@ class BaseDataset(object):
         names = []
         for name in cls.list():
             if quick:
-                ds = cls(pd.DataFrame([{'class_name':'fack'}]), None, name)
+                ds = cls(df=pd.DataFrame([{'class_name':'fack'}]), reader=None, name=name)
                 path = ds._get_summary_path()
                 if not path or not path.exists():
                     failed.append(name)
@@ -181,7 +187,7 @@ class BaseDataset(object):
             logging.warning(f'Failed to load summary info for {len(failed)} datasets. '
                 'It may due to they haven\'t downloaded and preprocessed yet. '
                 'You could change `quick=True` to `quick=False` to fix it')
-        return summary
+        return summary.sort_values(summary.columns[0])
 
 
 class ClassificationDataset(BaseDataset):
@@ -193,7 +199,7 @@ class ClassificationDataset(BaseDataset):
     """
     def __init__(self,
                  df: pd.DataFrame,
-                 reader: Optional[data_reader.Reader] = None,
+                 reader: Optional[core.Reader] = None,
                  name: str = ''):
         super().__init__(df, reader, name)
         self.classes = sorted(self.df['class_name'].unique().tolist())
@@ -221,7 +227,7 @@ def show_images(images, layout, scale):
     return axes
 ```
 
-```{.python .input}
+```{.python .input  n=3}
 import unittest
 import pandas as pd
 
@@ -282,10 +288,12 @@ class TestClassificationDataset(unittest.TestCase):
         self.assertEqual(b.df['class_name'].tolist(), [1,2])
         self.assertEqual(a.classes, [1,2,3])
         self.assertEqual(b.classes, [1,2,3])
-
 ```
 
-```{.python .input}
+```{.python .input  n=4}
+%load_ext mypy_ipython
+%mypy
+
 if __name__ == '__main__':
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
 ```

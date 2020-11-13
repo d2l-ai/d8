@@ -26,7 +26,7 @@ stage("Build and Publish") {
       sh label: "Unit Tests", script: """set -ex
       conda activate ${ENV_NAME}
       d2lbook build outputcheck
-      python -m unittest d8/*.py d8/**/*.py
+      # python -m unittest d8/*.py d8/**/*.py
       # mypy --ignore-missing-imports d8/*.py
       """
 

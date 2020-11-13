@@ -3,9 +3,7 @@
 # Don't edit it directly
 
 #@save_all
-
-
-from typing import Union, List, Sequence, Optional
+from typing import Union, List, Sequence, Optional, TypeVar
 import zipfile
 import tarfile
 import pathlib
@@ -21,7 +19,13 @@ import logging
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+__all__ = ['Reader', 'EmptyReader', 'FolderReader', 'TarReader', 'ZipReader', 'create_reader', 'listify']
 
+#_E = TypeVar("_E")
+#def listify(x: Optional[Union[_E, Sequence[_E]]]) -> List[_E]:
+def listify(x):
+    """Make x a list if it isn't."""
+    return [] if not x else (list(x) if isinstance(x, (tuple, list)) else [x])
 
 class Reader(abc.ABC):
     """The base class of the data reader.
@@ -113,9 +117,7 @@ class Reader(abc.ABC):
 
 Path = Union[str, pathlib.Path]
 
-_listify = lambda x: [] if not x else (list(x) if isinstance(x, (tuple, list)) else [x])
-
-def create_reader(root: Union[Path, Sequence[Path]]) -> Reader:
+def create_reader(root: Optional[Union[Path, Sequence[Path]]]) -> Reader:
     """The factory function to create a data reader.
 
     Based on the root path type, such as folder, zip file, tar file, proper data
@@ -125,7 +127,7 @@ def create_reader(root: Union[Path, Sequence[Path]]) -> Reader:
     :return: The created data reader
     """
     roots = []
-    for r in _listify(root):
+    for r in listify(root):
         roots.extend([pathlib.Path(g) for g in glob.glob(str(r))])
     roots = list(set(roots))
     if len(roots) == 0:
@@ -214,4 +216,27 @@ class MultiReader(Reader):
                 rets.append(name/p)
         return rets
 
+
+import unittest
+
+class TestListify(unittest.TestCase):
+    def test_listify(self):
+        self.assertEqual(listify(None), [])
+        self.assertEqual(listify(1), [1,])
+        self.assertEqual(listify([1,2,3]), [1,2,3])
+        self.assertEqual(listify(('a',1,)), ['a',1])
+        
+class TestReader(unittest.TestCase):
+    def test_empty_reader(self):
+        a = create_reader('xyz')
+        self.assertEqual(type(a), EmptyReader)
+        self.assertEqual(a._list_all(), [])
+        
+    #TODO, use core.downlowd to download data and test reader
+
+
+
+
+if __name__ == '__main__':
+    unittest.main(argv=['first-arg-is-ignored'], exit=False)
 

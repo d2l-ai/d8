@@ -3,8 +3,7 @@
 # Don't edit it directly
 
 #@save_all
-
-
+#@hide_all
 import contextvars
 import logging
 import os
@@ -17,9 +16,9 @@ import requests
 import tqdm
 import xxhash
 
-from d8 import data_reader
+from d8 import core
 
-DATAROOT = pathlib.Path.home()/'.d8'
+__all__ = ['download', 'DATAROOT', 'NameContext']
 
 DATAROOT = pathlib.Path.home()/'.d8'
 
@@ -90,13 +89,13 @@ def _save_hash(file_path: pathlib.Path) -> None:
     if not file_path.is_file(): return
     hash_file_path = _add_suffix(file_path, '.xxh')
     with hash_file_path.open('w') as f:
-        f.write(_get_xxhash(file_path)+'\n') 
-        
-        
+        f.write(_get_xxhash(file_path)+'\n')
+
+
 class TestHash(unittest.TestCase):
-    def test_hash(self):        
+    def test_hash(self):
         f = tempfile.NamedTemporaryFile()
-        f.write(b'12345678') 
+        f.write(b'12345678')
         fn = pathlib.Path(f.name)
         self.assertEqual(_match_hash(fn), False)
         _save_hash(fn)
@@ -112,35 +111,37 @@ def _download_kaggle(url: str, save_dir:str) -> pathlib.Path:
         for kp in kps:
             os.environ[kp[0][::2]+kp[0][1::2]] = kp[1][::2]+kp[1][1::2]
         import kaggle
-        
+
     # parse url
     if '/' in url:
-        user, url = url.split('/')
+        user = url.split('/')[0]
+        url = url[len(user)+1:]
     else:
-        user = '' 
+        user = ''
 
     if '#' in url:
         dataset, file = url.split('#')
     elif '?select=' in url:
         dataset, file = url.split('?select=')
     else:
-        dataset, file = url, '' 
+        dataset, file = url, ''
+    dataset = dataset.split('/')[0]
     file = file.replace('+', ' ')
-    
+
     # check if already exists
     full_dir = DATAROOT/save_dir
     file_path = full_dir/(file if file else dataset)
     if _match_hash(file_path): return file_path
     zip_file_path = _add_suffix(file_path, '.zip')
     if _match_hash(zip_file_path): return zip_file_path
-    
+
     # download
-    if user:
+    if user and user != 'c':
         if file:
-            logging.info(f'Downloading {file} from Kaggle dataset {user}/{dataset} into {full_dir}')            
+            logging.info(f'Downloading {file} from Kaggle dataset {user}/{dataset} into {full_dir}')
             kaggle.api.dataset_download_file(f'{user}/{dataset}', file, full_dir)
         else:
-            logging.info(f'Downloading Kaggle dataset {user}/{dataset} into {full_dir}')            
+            logging.info(f'Downloading Kaggle dataset {user}/{dataset} into {full_dir}')
             kaggle.api.dataset_download_files(f'{user}/{dataset}', full_dir)
     else:
         if file:
@@ -149,16 +150,16 @@ def _download_kaggle(url: str, save_dir:str) -> pathlib.Path:
         else:
             logging.info(f'Downloading Kaggle competition {dataset} into {full_dir}.')
             kaggle.api.competition_download_files(dataset, full_dir)
-            
+
     # check saved
     if ' ' in file:
         save_path = pathlib.Path(str(file_path).replace(' ', '%20'))
         if save_path.is_file():
-            save_path.rename(file_path)            
+            save_path.rename(file_path)
         save_path = pathlib.Path(str(zip_file_path).replace(' ', '%20'))
         if save_path.is_file():
             save_path.rename(zip_file_path)
-        
+
     if file_path.is_file():
         _save_hash(file_path)
         return file_path
@@ -167,12 +168,12 @@ def _download_kaggle(url: str, save_dir:str) -> pathlib.Path:
         return zip_file_path
     raise FileNotFoundError(f'Not found downloaded file as {file_path} or {zip_file_path}')
     return ''
-    
+
 
 def _download_url(url: str, save_dir:str):
     """Download from a URL, save it to file_path."""
     file_path = DATAROOT/save_dir/url.split('/')[-1]
-    if _match_hash(file_path): return     
+    if _match_hash(file_path): return file_path
     logging.info(f'Downloading {url} into {file_path}')
     if not file_path.parent.exists():
         file_path.parent.mkdir(parents=True)
@@ -196,9 +197,9 @@ def _extract_file(file_path: pathlib.Path) -> pathlib.Path:
     save_folder = file_path.parent
     if file_path.suffix not in ['.zip', '.tar', '.gz', '.tgz']:
         return save_folder
-    reader = data_reader.create_reader(file_path)
+    reader = core.create_reader(file_path)
     compressed_files = set(reader.list_files())
-    existed_files = set(data_reader.create_reader(save_folder).list_files())
+    existed_files = set(core.create_reader(save_folder).list_files())
     uncompressed_files = compressed_files.difference(existed_files)
     if len(uncompressed_files):
         logging.info(f'Extracting {str(file_path)} to {str(save_folder.resolve())}')
@@ -211,13 +212,14 @@ def _extract_file(file_path: pathlib.Path) -> pathlib.Path:
 
 def download(url: str, save_dir: Optional[str] = None, extract: bool = False
             ) -> pathlib.Path:
-    """Download a URL.
+    """Download a URL and return the file path. 
 
     :param url: The URL to be downloaded.
     :param save_dir: The directory to save the file, the default value is :py:func:`current_name`
-    :return: The downloaded file path
+    :param extract: If True, then extract the downloaded file into its current directory. 
+    :return: The downloaded file path or its directory if extracted. 
     """
-    if save_dir is None: 
+    if save_dir is None:
         save_dir = current_name()
     kaggle_prefix = ['kaggle://', 'https://www.kaggle.com/']
     downloaded = False
@@ -237,30 +239,39 @@ class TestDownload(unittest.TestCase):
         self.dir = DATAROOT/self.name
         for fn in self.dir.glob('*'):
             fn.unlink()
-    
+
     def test_kaggle(self):
-        self.assertEqual(_download_kaggle('titanic', self.name), 
-                         self.dir/'titanic.zip')
-        self.assertEqual(_download_kaggle('titanic#train.csv', self.name), 
-                         self.dir/'train.csv')
-        self.assertEqual(_download_kaggle('titanic?select=train.csv', self.name), 
-                         self.dir/'train.csv')
-        self.assertEqual(_download_kaggle('shebrahimi/financial-distress?select=Financial+Distress.csv', self.name), 
-                         self.dir/'Financial Distress.csv.zip')
-        
+        for _ in range(2):
+            self.assertEqual(_download_kaggle('titanic', self.name),
+                             self.dir/'titanic.zip')
+            self.assertEqual(_download_kaggle('titanic#train.csv', self.name),
+                             self.dir/'train.csv')
+            self.assertEqual(_download_kaggle('titanic?select=train.csv', self.name),
+                             self.dir/'train.csv')
+            self.assertEqual(_download_kaggle('shebrahimi/financial-distress?select=Financial+Distress.csv', self.name),
+                             self.dir/'Financial Distress.csv.zip')
+            self.assertEqual(_download_kaggle('fabdelja/autism-screening-for-toddlers#Toddler Autism dataset July 2018.csv', self.name),
+                             self.dir/'Toddler Autism dataset July 2018.csv')
     def test_url(self):
-        self.assertEqual(
-            _download_url('https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data', self.name),
-            self.dir/'iris.data')
-        
+        for _ in range(2):
+            self.assertEqual(
+                _download_url('https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data', self.name),
+                self.dir/'iris.data')
+
     def test_download(self):
-        self.assertEqual(
-            download('https://www.kaggle.com/oddyvirgantara/on-time-graduation-classification', self.name),
-            self.dir/'on-time-graduation-classification.zip')
-        self.assertEqual(
-            download('https://www.kaggle.com/oddyvirgantara/on-time-graduation-classification', self.name, extract=True),
-            self.dir)
-        
+        for _ in range(2):
+            self.assertEqual(
+                download('https://www.kaggle.com/oddyvirgantara/on-time-graduation-classification', self.name),
+                self.dir/'on-time-graduation-classification.zip')
+            self.assertEqual(
+                download('https://www.kaggle.com/oddyvirgantara/on-time-graduation-classification', self.name, extract=True),
+                self.dir)
+            self.assertEqual(
+                download('https://www.kaggle.com/c/titanic/data?select=train.csv', self.name),
+                self.dir/'train.csv')
+
+
+
 
 
 if __name__ == '__main__':

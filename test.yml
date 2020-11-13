@@ -6,3 +6,4 @@ dependencies:
       - git+https://github.com/d2l-ai/d2l-book
       - mxnet
       - mypy
+      - mypy_ipython

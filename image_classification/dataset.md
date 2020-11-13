@@ -205,11 +205,6 @@ class Dataset(base_dataset.ClassificationDataset):
             return pd.DataFrame(entries)
         return cls.from_df_func(data_path, get_df)
 
-    @classmethod
-    def summary_all(cls, quick=False):
-        df = super().summary_all(quick)
-        return df.sort_values('# images')
-
 ```
 
 ```{.python .input}

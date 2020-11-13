@@ -1,6 +1,7 @@
-# The `Dataset` API
+# This file is generated from tabular_classification/dataset.md automatically through:
+#    d2lbook build lib
+# Don't edit it directly
 
-```{.python .input  n=1}
 #@save_all
 import pathlib
 import pandas as pd
@@ -11,9 +12,7 @@ import unittest
 
 from d8 import base_dataset
 from d8 import data_reader
-```
 
-```{.python .input  n=2}
 class TabularDataset(base_dataset.BaseDataset):
     def __init__(self,
                  df: pd.DataFrame,
@@ -56,18 +55,4 @@ class Dataset(TabularDataset):
         s.insert(1, '#classes', self.df[self.label].nunique())
         if path and path.parent.exists(): s.to_pickle(path)
         return s
-```
 
-```{.json .output n=2}
-[
- {
-  "data": {
-   "text/html": "<div>\n<style scoped>\n    .dataframe tbody tr th:only-of-type {\n        vertical-align: middle;\n    }\n\n    .dataframe tbody tr th {\n        vertical-align: top;\n    }\n\n    .dataframe thead th {\n        text-align: right;\n    }\n</style>\n<table border=\"1\" class=\"dataframe\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th></th>\n      <th>#examples</th>\n      <th>#classes</th>\n      <th>#numeric_features</th>\n      <th>#category_features</th>\n      <th>size(MB)</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>0</th>\n      <td>149</td>\n      <td>3</td>\n      <td>4</td>\n      <td>0</td>\n      <td>0.005806</td>\n    </tr>\n  </tbody>\n</table>\n</div>",
-   "text/plain": "   #examples  #classes  #numeric_features  #category_features  size(MB)\n0        149         3                  4                   0  0.005806"
-  },
-  "execution_count": 2,
-  "metadata": {},
-  "output_type": "execute_result"
- }
-]
-```
