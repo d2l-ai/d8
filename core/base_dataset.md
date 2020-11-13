@@ -14,12 +14,12 @@
 #@hide_all
 from typing import Optional, Union, Callable, Tuple, Sequence, List, Type, TypeVar
 import pandas as pd
-from d8 import core 
+from d8 import core
 import pathlib
 import logging
 from matplotlib import pyplot as plt
 
-__all__ = ['BaseDataset', 'show_images']
+__all__ = ['BaseDataset', 'ClassificationDataset', 'show_images']
 ```
 
 ```{.python .input  n=2}
@@ -196,13 +196,18 @@ class ClassificationDataset(BaseDataset):
     Additional variables added besides :py:class:`BaseDataset`
 
     :ivar classes: The list of unique classes, each one is a string.
+    :ivar label: The column name that stores the labels.
     """
-    def __init__(self,
-                 df: pd.DataFrame,
-                 reader: Optional[core.Reader] = None,
-                 name: str = ''):
-        super().__init__(df, reader, name)
-        self.classes = sorted(self.df['class_name'].unique().tolist())
+    def __init__(self, df: pd.DataFrame, reader: core.Reader,
+                 label: Union[str, int]):
+        if isinstance(label, int):
+            label = df.columns[label]
+        if label not in df.columns:
+            raise ValueError(f'Label {label} is not in {df.columns}')
+        self.label = label
+        df = df[~df[label].isnull()]
+        self.classes = sorted(df[label].unique().tolist())
+        super().__init__(df, reader)
 
     def split(self, frac: Union[float, Sequence[float]], shuffle: bool = True, seed: int = 0):
         """Split a dataset into two.

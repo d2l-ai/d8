@@ -97,7 +97,7 @@ except ImportError:
     import xml.etree.ElementTree as ET  # type: ignore
 import logging
 
-from d8 import base_dataset
+from d8 import core
 
 ```
 
@@ -165,7 +165,11 @@ def _parse_voc(reader, image_dir, annotation_dir):
                 entries.extend(labels)
     return pd.DataFrame(entries)
 
-class Dataset(base_dataset.ClassificationDataset):
+class Dataset(core.ClassificationDataset):
+    """The class of an object detection dataset."""
+    def __init__(self, df: pd.DataFrame, reader: core.Reader):
+        super().__init__(df, reader, label='class_name')
+
     TYPE = 'object_detection'
 
     def show(self, layout=(2,4)) -> None:

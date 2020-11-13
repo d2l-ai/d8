@@ -109,19 +109,10 @@ from d8 import core
 ```
 
 ```{.python .input  n=8}
-class Dataset(core.BaseDataset):
-    """The class of an image classification dataset.
-
-    Additional variables added besides :py:class:`core.BaseDataset`
-
-    :ivar classes: The list of unique classes, each one is a string.
-    """
-    def __init__(self,
-                 df: pd.DataFrame,
-                 reader: Optional[core.Reader] = None,
-                 name: str = ''):
-        super().__init__(df, reader, name)
-        self.classes = sorted(self.df['class_name'].unique().tolist())
+class Dataset(core.ClassificationDataset):
+    """The class of an image classification dataset."""
+    def __init__(self, df: pd.DataFrame, reader: core.Reader):
+        super().__init__(df, reader, label='class_name')
 
     TYPE = 'image_classification'
 
@@ -218,10 +209,6 @@ class Dataset(core.BaseDataset):
             return pd.DataFrame(entries)
         return cls.from_df_func(data_path, get_df)
 
-    def split(self, frac: Union[float, Sequence[float]], shuffle: bool = True, seed: int = 0):
-        rets = super().split(frac, shuffle, seed)
-        for r in rets: r.classes = self.classes  # type: ignore
-        return rets
 ```
 
 ```{.python .input}
@@ -240,7 +227,7 @@ class TestDataset(unittest.TestCase):
 
 ```{.python .input}
 %load_ext mypy_ipython
-%mypy 
+%mypy
 
 if __name__ == '__main__':
     unittest.main(argv=['first-arg-is-ignored'], exit=False)

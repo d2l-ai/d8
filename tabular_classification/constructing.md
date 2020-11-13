@@ -7,6 +7,7 @@
 
 ```
 
+
 The :class:`Dataset` class provides multiple class methods to construct an image classification dataset.
 
 ```eval_rst
@@ -17,6 +18,7 @@ The :class:`Dataset` class provides multiple class methods to construct an image
    Dataset.from_df_func
 
 ```
+
 
 ```{.python .input  n=1}
 #@save
@@ -129,18 +131,4 @@ name = [x['name'] for x in from_csv_meta if x['name']]
 ds = Dataset.get(name[-1])
 ds.summary()
 #show('titanic')
-```
-
-```{.json .output n=3}
-[
- {
-  "data": {
-   "text/html": "<div>\n<style scoped>\n    .dataframe tbody tr th:only-of-type {\n        vertical-align: middle;\n    }\n\n    .dataframe tbody tr th {\n        vertical-align: top;\n    }\n\n    .dataframe thead th {\n        text-align: right;\n    }\n</style>\n<table border=\"1\" class=\"dataframe\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th></th>\n      <th>#examples</th>\n      <th>#classes</th>\n      <th>#numeric_features</th>\n      <th>#category_features</th>\n      <th>size(MB)</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <th>0</th>\n      <td>1562977</td>\n      <td>15</td>\n      <td>1</td>\n      <td>1</td>\n      <td>35.773827</td>\n    </tr>\n  </tbody>\n</table>\n</div>",
-   "text/plain": "   #examples  #classes  #numeric_features  #category_features   size(MB)\n0    1562977        15                  1                   1  35.773827"
-  },
-  "execution_count": 3,
-  "metadata": {},
-  "output_type": "execute_result"
- }
-]
 ```

@@ -1,6 +1,5 @@
 # The `Dataset` API
 
-
 ```{.python .input}
 %load_ext autoreload
 %autoreload 2
@@ -9,17 +8,17 @@
 ```{.python .input}
 #@save
 from typing import Union, Sequence, Callable, Dict, Tuple, Optional
-from d8 import base_dataset, data_reader
+from d8 import core
 import pandas as pd
 import pathlib
 ```
 
 ```{.python .input}
 #@save
-class Dataset(base_dataset.BaseDataset):
+class Dataset(core.BaseDataset):
     def __init__(self,
                  df: pd.DataFrame,
-                 reader: data_reader.Reader,
+                 reader: core.Reader,
                  pixel_to_class,
                  name: str = '',):
         super().__init__(df, reader, name)
@@ -33,12 +32,12 @@ class Dataset(base_dataset.BaseDataset):
         for (_, sample) in samples.iterrows():
             images.append(self.reader.read_image(sample['file_path'], max_width=max_width))
             images.append(self.reader.read_image(sample['label_file_path'], max_width=max_width))
-        base_dataset.show_images(images, (nrows, ncols*2), 7.0 / ncols)
+        core.show_images(images, (nrows, ncols*2), 7.0 / ncols)
 
     @classmethod
     def from_label_func(cls, data_path: Union[str, Sequence[str]],
                         label_func: Callable[[pathlib.Path], Optional[pathlib.Path]],
-                        pixel_to_class_func: Callable[[data_reader.Reader], Dict[Sequence[int], str]]):
+                        pixel_to_class_func: Callable[[core.Reader], Dict[Sequence[int], str]]):
         reader = cls.create_reader(data_path)
         all_image_paths = reader.list_images()
         pairs = []
@@ -73,6 +72,9 @@ def camseq01_class_mapping(reader):
 ```
 
 ```{.python .input}
+%load_ext mypy_ipython
+%mypy 
+
 #'http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamSeq01/CamSeq01.zip',
 Dataset.add('camseq01', Dataset.from_label_func,
             [['kaggle://carlolepelaars/camseq-semantic-segmentation',

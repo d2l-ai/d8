@@ -2,7 +2,7 @@ __version__ = "0.0.2"
 
 from . import core
 from . import image_classification
-# from . import object_detection
+from . import object_detection
 # from . import tabular_classification
 
 import logging
