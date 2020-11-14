@@ -11,9 +11,8 @@ class Dataset(core.BaseDataset):
     def __init__(self,
                  df: pd.DataFrame,
                  reader: core.Reader,
-                 pixel_to_class,
-                 name: str = '',):
-        super().__init__(df, reader, name)
+                 pixel_to_class):
+        super().__init__(df, reader)
         self.pixel_to_class = pixel_to_class
 
     def show(self, layout=(2,3)) -> None:
@@ -30,7 +29,7 @@ class Dataset(core.BaseDataset):
     def from_label_func(cls, data_path: Union[str, Sequence[str]],
                         label_func: Callable[[pathlib.Path], Optional[pathlib.Path]],
                         pixel_to_class_func: Callable[[core.Reader], Dict[Sequence[int], str]]):
-        reader = cls.create_reader(data_path)
+        reader = core.create_reader(data_path)
         all_image_paths = reader.list_images()
         pairs = []
         for p in all_image_paths:
