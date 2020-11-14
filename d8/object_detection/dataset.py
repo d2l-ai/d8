@@ -4,22 +4,23 @@
 
 #@save_all
 #@hide_all
-import pathlib
-import pandas as pd
-import random
-from matplotlib import pyplot as plt
-import dataclasses
 import collections
+import dataclasses
+import logging
+import pathlib
+import random
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
+
+import pandas as pd
 import PIL
-from typing import Union, Tuple, Callable, List, Any, Optional
+from matplotlib import pyplot as plt
+
+from d8 import core
+
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET  # type: ignore
-import logging
-
-from d8 import core
-
 
 @dataclasses.dataclass
 class BBox:
@@ -84,10 +85,10 @@ def _parse_voc(reader, image_dir, annotation_dir):
                 entries.extend(labels)
     return pd.DataFrame(entries)
 
-class Dataset(core.ClassificationDataset):
+class Dataset(core.BaseDataset):
     """The class of an object detection dataset."""
     def __init__(self, df: pd.DataFrame, reader: core.Reader):
-        super().__init__(df, reader, label='class_name')
+        super().__init__(df, reader, label_name='class_name')
 
     TYPE = 'object_detection'
 
@@ -122,14 +123,16 @@ class Dataset(core.ClassificationDataset):
                       bbox=dict(facecolor=class_to_color[row['class_name']],
                                 lw=0, alpha=1, pad=2))
 
-    def summary(self):
+    @property
+    def classes(self):
+        return self.unique_labels
+    
+    def _summary(self):
         """Returns a summary about this dataset."""
-        path = self._get_summary_path()
-        if path and path.exists(): return pd.read_pickle(path)
         get_mean_std = lambda col: f'{col.mean():.1f} ± {col.std():.1f}'
         img_df = self.reader.get_image_info(self.df['file_path'].unique())
         merged_df = pd.merge(self.df, img_df, on='file_path')
-        summary = pd.DataFrame([{'# images':len(img_df),
+        return pd.DataFrame([{'# images':len(img_df),
                                  '# bboxes':len(self.df),
                                  '# bboxes / image':get_mean_std(self.df.groupby('file_path')['file_path'].count()),
                                  '# classes':len(self.classes),
@@ -138,11 +141,9 @@ class Dataset(core.ClassificationDataset):
                                  'bbox width':get_mean_std((merged_df['xmax']-merged_df['xmin'])*merged_df['width']),
                                  'bbox height':get_mean_std((merged_df['ymax']-merged_df['ymin'])*merged_df['height']),
                                  'size (GB)':img_df['size (KB)'].sum()/2**20}])
-        if path and path.parent.exists(): summary.to_pickle(path)
-        return summary
 
     @classmethod
-    def from_voc(cls, data_path: str,
+    def from_voc(cls, data_path: Union[str, Sequence[str]],
                  image_folders: str, annotation_folders: str):
         """Create a dataset when data are stored in the VOC format.
 
@@ -150,20 +151,12 @@ class Dataset(core.ClassificationDataset):
         :param folders: The folders containing all example images.
         :return: The created dataset.
         """
-        listify = lambda x: x if isinstance(x, (tuple, list)) else [x]
-
-        def get_df_func(image_folders, annotation_folders):
-            def df_func(reader):
-                dfs = []
-                for image_folder, annotation_folder in zip(image_folders, annotation_folders):
-                    dfs.append(_parse_voc(reader, image_folder, annotation_folder))
-                return pd.concat(dfs, axis=0)
-            return df_func
-        return cls.from_df_func(data_path, get_df_func(listify(image_folders), listify(annotation_folders)))
-
-    @classmethod
-    def summary_all(cls, quick=False):
-        df = super().summary_all(quick)
-        return df.sort_values('# images')
-
+        
+        reader = core.create_reader(data_path)
+        dfs = []
+        for image_folder, annotation_folder in zip(
+            core.listify(image_folders), core.listify(annotation_folders)):
+            dfs.append(_parse_voc(reader, image_folder, annotation_folder))
+        df = pd.concat(dfs, axis=0, ignore_index=True)
+        return cls(df, reader)
 
