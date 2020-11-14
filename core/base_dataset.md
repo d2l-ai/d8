@@ -277,23 +277,3 @@ class TestBaseDataset(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
 ```
-
-```{.json .output n=4}
-[
- {
-  "name": "stderr",
-  "output_type": "stream",
-  "text": "......"
- },
- {
-  "name": "stdout",
-  "output_type": "stream",
-  "text": "Success: no issues found in 1 source file\nType checking successful\n"
- },
- {
-  "name": "stderr",
-  "output_type": "stream",
-  "text": "\n----------------------------------------------------------------------\nRan 6 tests in 0.018s\n\nOK\n"
- }
-]
-```
