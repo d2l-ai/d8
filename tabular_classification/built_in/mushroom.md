@@ -1,0 +1,49 @@
+# `mushroom`
+
+```{.python .input}
+#@hide
+# DO NOT EDIT THIS NOTEBOOK.
+
+# This notebook is automatically generated from the `template` notebook in this
+# folder by running `d8 gen_desc`
+```
+
+
+```{.python .input}
+#@hide
+%load_ext autoreload
+%autoreload 2
+%matplotlib inline
+
+from IPython import display
+import pandas as pd
+
+display.set_matplotlib_formats('svg')
+pd.set_option('precision', 2)
+
+from d8.tabular_classification import Dataset
+```
+
+Summary this dataset.
+
+```{.python .input}
+#@hide_code
+name = "mushroom"
+ds = Dataset.get(name)
+ds.summary()
+```
+
+First a few examples
+
+```{.python .input}
+#@hide_code
+ds.df.head()
+```
+
+The number of examples for each class.
+
+```{.python .input}
+#@hide_code
+ds.df.groupby(ds.label_name)[ds.label_name].count().sort_values().plot.barh(
+    figsize=(6, 2.5*len(ds.classes)/10));
+```

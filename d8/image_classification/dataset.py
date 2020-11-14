@@ -48,10 +48,6 @@ class Dataset(core.BaseDataset):
                                  'image height':get_mean_std(img_df['height']),
                                  'size (GB)':img_df['size (KB)'].sum()/2**20,}])
 
-    @property
-    def classes(self):
-        return self.unique_labels
-    
     def __getitem__(self, idx):
         if idx < 0 or idx > self.__len__():
             raise IndexError(f'index {idx} out of range [0, {self.__len__()})')
@@ -81,7 +77,7 @@ class Dataset(core.BaseDataset):
         return MXDataset(self)
 
     @classmethod
-    def from_folders(cls, data_path: Union[str, Sequence[str]], 
+    def from_folders(cls, data_path: Union[str, Sequence[str]],
                      folders: Union[str, Sequence[str]]) -> 'Dataset':
         """Create a dataset when images from the same class are stored in the same folder.
 
@@ -98,7 +94,7 @@ class Dataset(core.BaseDataset):
         return cls.from_label_func(data_path, label_func)
 
     @classmethod
-    def from_label_func(cls, data_path: Union[str, Sequence[str]], 
+    def from_label_func(cls, data_path: Union[str, Sequence[str]],
                         label_func: Callable[[pathlib.Path], str]) -> 'Dataset':
         """Create a dataset from a function that maps a image path to its class name.
 
@@ -123,20 +119,20 @@ class TestDataset(unittest.TestCase):
                      ['https://www.kaggle.com/niteshfre/chessman-image-dataset', '*'])
         ds = Dataset.get('chessman_test')
         self.assertEqual(len(ds.df), 552)
-        self.assertEqual(ds.unique_labels, ['Bishop', 'King', 'Knight', 'Pawn', 'Queen', 'Rook'])
+        self.assertEqual(ds.classes, ['Bishop', 'King', 'Knight', 'Pawn', 'Queen', 'Rook'])
         items = ds[10]
         self.assertEqual(len(items), 2)
         self.assertEqual(items[0].shape[2], 3)
-        
+
     def test_from_label_func(self):
         name = 'test-honey-bee'
         Dataset.add(name, Dataset.from_label_func,
-                     ['https://www.kaggle.com/jenny18/honey-bee-annotated-images', 
+                     ['https://www.kaggle.com/jenny18/honey-bee-annotated-images',
                       lambda path: path.name.split('_')[0]])
         ds = Dataset.get(name)
-        self.assertEqual(len(ds.df), 5172) 
-        self.assertEqual(len(ds.unique_labels), 45)
-    
+        self.assertEqual(len(ds.df), 5172)
+        self.assertEqual(len(ds.classes), 45)
+
 
 
 

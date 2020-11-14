@@ -36,12 +36,12 @@ class Dataset(core.BaseDataset):
     def _summary(self):
         numeric_cols = len(self.df.drop(self.label_name, axis=1).select_dtypes('number').columns)
         return pd.DataFrame([{'#examples':len(self.df),
-                              '#classes':len(self.unique_labels),
+                              '#classes':len(self.classes),
                               '#numeric_features':numeric_cols,
                               '#category_features':len(self.df.columns) - 1 - numeric_cols,
                               'size(MB)':self.df.memory_usage().sum()/2**20,}])
 
-import unittest 
+import unittest
 
 class TestDataset(unittest.TestCase):
     def test_from_csv(self):
@@ -51,8 +51,8 @@ class TestDataset(unittest.TestCase):
                      ['https://www.kaggle.com/c/titanic/data?select=train.csv', -1])
         ds = Dataset.get(name)
         self.assertEqual(len(ds.df), 889)
-        self.assertEqual(ds.unique_labels, ['C', 'Q', 'S'])
-        
+        self.assertEqual(ds.classes, ['C', 'Q', 'S'])
+
 
 
 

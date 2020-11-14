@@ -2,23 +2,50 @@ import argparse
 import sys
 import logging
 import pandas as pd
-# import pathlib
-# import hashlib
-# import requests
-# import tqdm
+import pathlib
+import logging
+import importlib
 
-# from . import file_reader
-from . import built_in_desc
+TASK_TYPES = ['image_classification', 'object_detection', 'tabular_classification']
 
-logging.basicConfig(format='[d8:%(filename)s:L%(lineno)d] %(levelname)-6s %(message)s')
-logging.getLogger().setLevel(logging.INFO)
+message = '''
+```{.python .input}
+#@hide
+# DO NOT EDIT THIS NOTEBOOK.
 
-# pd.set_option('display.max_columns', 500)
+# This notebook is automatically generated from the `template` notebook in this
+# folder by running `d8 gen_desc`
+```
+'''
 
-# pd.set_option('display.width', 1000)
+def generate_built_in_desc(task_type: str):
+    dir = pathlib.Path(__file__).parent.parent/task_type/'built_in'
+    template = dir/'_template.md'
+    if not template.exists():
+        logging.warning(f'Not found {template}')
+        return
+    with template.open('r') as f:
+        lines = f.readlines()
+    mod = importlib.import_module('d8.'+task_type)
+    names = mod.Dataset.list() # type: ignore
+    for name in names:
+        tgt = dir/(name+'.md')
+        if tgt.exists() and tgt.stat().st_mtime > template.stat().st_mtime:
+            logging.info(f'skip to generate {tgt} as it is newer than the template file')
+            continue
+        lines[0] = f'# `{name}`\n{message}\n'
+        for i, l in enumerate(lines):
+            if 'name = ' in l:
+                lines[i] = f'name = "{name}"\n'
+        logging.info(f'write to {tgt}')
+        with tgt.open('w') as f:
+            f.writelines(lines)
 
-
-TASK_TYPES = ['image_classification', 'object_detection']
+    with (dir/'index.md').open('w') as f:
+        f.write(f'# Built-in Datasets\n:label:`{task_type}_built_in`\n\n```toc\n\n')
+        for name in sorted(names):
+            f.write(name+'\n')
+        f.write('\n\n```')
 
 def main():
 
@@ -33,7 +60,7 @@ def main():
     cmd = sys.argv[1]
     if cmd == 'gen_desc':
         for tt in TASK_TYPES:
-            built_in_desc.generate(tt)
+            generate_built_in_desc(tt)
 
 if __name__ == "__main__":
     main()

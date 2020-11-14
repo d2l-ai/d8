@@ -3,7 +3,6 @@
 
 ```toc
 
-12306
 animal-10
 bird-225
 boat

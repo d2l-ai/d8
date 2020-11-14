@@ -69,7 +69,7 @@ class BaseDataset(object):
         return self.df[self.label_name]
 
     @property
-    def unique_labels(self):
+    def classes(self):
         x = self.labels.unique()
         return sorted(self.labels.unique())
 
@@ -251,7 +251,7 @@ class TestBaseDataset(unittest.TestCase):
 
     def test_labels(self):
         self.assertEqual(self.ds.labels.tolist(), [1, 2, 3, 4, 5, 5])
-        self.assertEqual(self.ds.unique_labels, [1, 2, 3, 4, 5])
+        self.assertEqual(self.ds.classes, [1, 2, 3, 4, 5])
 
 
 

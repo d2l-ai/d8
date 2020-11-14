@@ -123,10 +123,6 @@ class Dataset(core.BaseDataset):
                       bbox=dict(facecolor=class_to_color[row['class_name']],
                                 lw=0, alpha=1, pad=2))
 
-    @property
-    def classes(self):
-        return self.unique_labels
-    
     def _summary(self):
         """Returns a summary about this dataset."""
         get_mean_std = lambda col: f'{col.mean():.1f} ± {col.std():.1f}'
@@ -151,7 +147,7 @@ class Dataset(core.BaseDataset):
         :param folders: The folders containing all example images.
         :return: The created dataset.
         """
-        
+
         reader = core.create_reader(data_path)
         dfs = []
         for image_folder, annotation_folder in zip(
