@@ -20,6 +20,8 @@ import logging
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+from d8 import core 
+
 __all__ = ['Reader', 'EmptyReader', 'FolderReader', 'TarReader', 'ZipReader', 'create_reader', 'listify']
 
 #_E = TypeVar("_E")
@@ -116,33 +118,6 @@ class Reader(abc.ABC):
                         'width':img.size[0], 'height':img.size[1]})
         return pd.DataFrame(rows)
 
-Path = Union[str, pathlib.Path]
-
-def create_reader(root: Optional[Union[Path, Sequence[Path]]]) -> Reader:
-    """The factory function to create a data reader.
-
-    Based on the root path type, such as folder, zip file, tar file, proper data
-    reader will be created.
-
-    :param root: The root path, or the list of root paths, it must exist locally.
-    :return: The created data reader
-    """
-    roots = []
-    for r in listify(root):
-        roots.extend([pathlib.Path(g) for g in glob.glob(str(r))])
-    roots = list(set(roots))
-    if len(roots) == 0:
-        return EmptyReader()
-    if len(roots) > 1:
-        raise NotImplementedError()
-    root = roots[0]
-    if root.is_dir():
-        return FolderReader(root)
-    if root.suffix == '.zip':
-        return ZipReader(root)
-    if root.suffix in ['.tar', '.tgz', '.gz']:
-        return TarReader(root)
-    raise ValueError(f'Not support {root}')
 
 class EmptyReader(Reader):
     def __init__(self):
@@ -195,28 +170,29 @@ class TarReader(Reader):
     def _list_all(self):
         return [pathlib.Path(fn) for fn in self._root_fp.getmembers()]
 
-class MultiReader(Reader):
-    """Reading multiple roots at the same time."""
-    def __init__(self, roots: Union[Sequence[pathlib.Path], Sequence[str]]):
-        self._readers = dict()
-        for root in roots:
-            root = pathlib.Path(root)
-            self._readers[root.with_suffix('').name] = create_reader(root)
+def create_reader(data_path: Union[str, Sequence[str]], 
+                  name : Optional[str] = None) -> Reader:
+    """Create a data reader. 
 
-    def open(self, path: Union[str, pathlib.Path]):
-        path = pathlib.Path(path)
-        base = path.parents[len(path.parents)-2]
-        if base.name not in self._readers:
-            raise ValueError(f'The top-level path {base.name} should in {self._readers.keys()}')
-        return self._readers[base.name].open(path.relative_to(base))
-
-    def _list_all(self) -> List[pathlib.Path]:
-        rets = []
-        for name, reader in self._readers.items():
-            for p in reader._list_all():
-                rets.append(name/p)
-        return rets
-
+    :param data_path: Either local or remote. 
+    :return: The created data reader
+    """
+    paths = listify(data_path)
+    local_paths = [(pathlib.Path(p) if pathlib.Path(p).exists() else core.download(
+        str(p), name, extract=True)) for p in paths]
+    local_paths = list(set(local_paths))
+    if len(local_paths) == 0:
+        return EmptyReader()
+    if len(local_paths) > 1:
+        raise NotImplementedError()
+    path = local_paths[0]
+    if path.is_dir():
+        return FolderReader(path)
+    if path.suffix == '.zip':
+        return ZipReader(path)
+    if path.suffix in ['.tar', '.tgz', '.gz']:
+        return TarReader(path)
+    raise ValueError(f'Not support {path}')
 
 import unittest
 
@@ -228,12 +204,19 @@ class TestListify(unittest.TestCase):
         self.assertEqual(listify(('a',1,)), ['a',1])
         
 class TestReader(unittest.TestCase):
-    def test_empty_reader(self):
-        a = create_reader('xyz')
-        self.assertEqual(type(a), EmptyReader)
-        self.assertEqual(a._list_all(), [])
-        
-    #TODO, use core.downlowd to download data and test reader
+    def test_create_reader(self):
+        name = 'test_reader'
+        for fn in (core.DATAROOT/name).glob('*'): fn.unlink()
+            
+        r = create_reader('https://www.kaggle.com/c/titanic', name)
+        self.assertEqual(type(r), FolderReader)        
+        self.assertEqual(r.list_files(['.zip', '.csv']), 
+                         [pathlib.Path('test.csv'), pathlib.Path('titanic.zip'), pathlib.Path('train.csv'), pathlib.Path('gender_submission.csv')])
+
+        r = create_reader('https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data', name)
+        with r.open('iris.data') as f:
+            lines = f.readlines()
+            self.assertEqual(len(lines), 151)
 
 
 

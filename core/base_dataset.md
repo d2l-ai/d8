@@ -12,14 +12,16 @@
 ```{.python .input  n=1}
 #@save_all
 #@hide_all
-from typing import Optional, Union, Callable, Tuple, Sequence, List, Type, TypeVar
-import pandas as pd
-from d8 import core
-import pathlib
 import logging
+import pathlib
+from typing import Callable, List, Optional, Sequence, Type, TypeVar, Union
+
+import pandas as pd
 from matplotlib import pyplot as plt
 
-__all__ = ['BaseDataset', 'ClassificationDataset', 'show_images']
+from d8 import core
+
+__all__ = ['BaseDataset', 'show_images']
 ```
 
 ```{.python .input  n=2}
@@ -30,27 +32,34 @@ class BaseDataset(object):
 
     :param df: Depends on the dataset type, it either contains the data (e.g. tabular and text)
         or labels with links to the examples (e.g. images).
-    :param reader: An optional reader to read the rest data not in the dataframe.
-    :param name: An optional name to retrieve this dataset later.
+    :param reader: An data reader to read data from disk.
+    :param label_name: An optional name for the column storing all labels.
 
 
     :ivar df: The dataframe
     :ivar reader: The data reader
-    :ivar name: The string name
+    :ivar name: The string name about this dataset
     :cvar TYPE: The string type of this dataset, such as ``image_classification``
     """
-    def __init__(self,
-                 df: pd.DataFrame,
-                 reader: Optional[core.Reader] = None,
-                 name: str = '') -> None:
+    def __init__(self, df: pd.DataFrame, reader: core.Reader,
+                 label_name: Optional[Union[str, int]]) -> None:
         if not isinstance(df, pd.DataFrame):
-            raise TypeError(f'{type(df)} is a not pandas DataFrame')
-        self.df = df
-        if len(self.df) == 0:
+            raise TypeError(f'{type(df)} is not pandas DataFrame')
+        if not isinstance(reader, core.Reader):
+            raise TypeError(f'{type(reader)} is not core.Reader')
+        if label_name is not None:
+            if isinstance(label_name, int):
+                label_name = df.columns[label_name]
+            if label_name not in df.columns:
+                raise ValueError(f'Label_name {label_name} is not in {df.columns}')
+            df = df[~df[label_name].isnull()]
+        if len(df) == 0:
             logging.warning('No example is found as `df` is empty.')
             logging.warning('You may use `ds.reader.list_files()` to check all files.')
-        self.reader = core.EmptyReader() if reader is None else reader
-        self.name = name
+        self.df = df
+        self.reader = reader
+        self.label_name = label_name
+        self.name = ''
 
     TYPE = ''
     _DATASETS = dict()  # type: ignore
@@ -58,6 +67,13 @@ class BaseDataset(object):
     def __len__(self) -> int:
         """Return the number of examples."""
         return len(self.df)
+
+    @property
+    def label(self):
+        """Return the list of labels."""
+        if self.label_name is None:
+            raise ValueError('label_name is None')
+        return self.df[self.label_name]
 
     def split(self, frac: Union[float, Sequence[float]], shuffle: bool = True, seed: int = 0) -> List['BaseDataset']:
         """Split a dataset.
@@ -80,7 +96,8 @@ class BaseDataset(object):
         for i, f in enumerate(fracs):
             if f <= 0: raise ValueError(f'frac {f} is not in (0, 1)')
             e = int(sum(fracs[:(i+1)]) * len(df))
-            rets.append(self.__class__(df.iloc[s:e].reset_index(), self.reader, f'{self.name}.{i}'))
+            rets.append(self.__class__(df.iloc[s:e].reset_index(), self.reader, self.label_name))
+            if self.name: rets[-1].name = f'{self.name}.{i}'
             s = e
         return rets
 
@@ -95,7 +112,9 @@ class BaseDataset(object):
             if ds.reader != self.reader:
                 raise ValueError('You cannot merge with another dataset with a different reader')
             dfs.append(ds.df)
-        return self.__class__(pd.concat(dfs, axis=0, ignore_index=True), self.reader, self.name+'.merged')
+        merged_ds = self.__class__(pd.concat(dfs, axis=0, ignore_index=True), self.reader, self.label_name)
+        if self.name: merged_ds.name = self.name+'.merged'
+        return merged_ds
 
     @classmethod
     def add(cls, entry, *args) -> None:
@@ -131,28 +150,6 @@ class BaseDataset(object):
         """Return the list of names of added datasets."""
         return [name for typ, name in cls._DATASETS if typ == cls.TYPE]
 
-    @classmethod
-    def create_reader(cls, data_path: Optional[Union[str, Sequence[str]]], name: Optional[str]=None) -> core.Reader:
-        def download(data_path):
-            return [(p if pathlib.Path(p).exists() else core.download(p, extract=True)) for p in data_path]
-        if name:
-            with core.NameContext(name):
-                data_path = download(core.listify(data_path))
-        else:
-            data_path = download(core.listify(data_path))
-        return core.create_reader(data_path)
-
-    @classmethod
-    def from_df_func(cls: Type[_T], data_path: Optional[Union[str, Sequence[str]]],
-                     df_func: Callable[[core.Reader], pd.DataFrame]) -> _T:
-        """Create a dataset from a dataframe function.
-
-        :param data_path: A remote URL (data will be downloaded automatically) or a local data_path, or a list of them
-        :param df_func: A function takes `self.reader` as its input to return the dataframe.
-        """
-        reader = cls.create_reader(data_path)
-        return cls(df_func(reader), reader)
-
     def summary(self) -> pd.DataFrame:
         """Returns a summary about this dataset."""
         raise NotImplementedError()
@@ -173,7 +170,10 @@ class BaseDataset(object):
         names = []
         for name in cls.list():
             if quick:
-                ds = cls(df=pd.DataFrame([{'class_name':'fack'}]), reader=None, name=name)
+                ds = cls(df=pd.DataFrame([{'class_name':'fack'}]), 
+                         reader=core.EmptyReader(),
+                         label_name='class_name')
+                ds.name = name
                 path = ds._get_summary_path()
                 if not path or not path.exists():
                     failed.append(name)
@@ -188,36 +188,6 @@ class BaseDataset(object):
                 'It may due to they haven\'t downloaded and preprocessed yet. '
                 'You could change `quick=True` to `quick=False` to fix it')
         return summary.sort_values(summary.columns[0])
-
-
-class ClassificationDataset(BaseDataset):
-    """The base class of a classification dataset.
-
-    Additional variables added besides :py:class:`BaseDataset`
-
-    :ivar classes: The list of unique classes, each one is a string.
-    :ivar label: The column name that stores the labels.
-    """
-    def __init__(self, df: pd.DataFrame, reader: core.Reader,
-                 label: Union[str, int]):
-        if isinstance(label, int):
-            label = df.columns[label]
-        if label not in df.columns:
-            raise ValueError(f'Label {label} is not in {df.columns}')
-        self.label = label
-        df = df[~df[label].isnull()]
-        self.classes = sorted(df[label].unique().tolist())
-        super().__init__(df, reader)
-
-    def split(self, frac: Union[float, Sequence[float]], shuffle: bool = True, seed: int = 0):
-        """Split a dataset into two.
-
-        It is similar to :py:func:`BaseDataset.split`, but it guarantees the splitted datasets
-        will have the same `classes` as this one.
-        """
-        rets = super().split(frac, shuffle, seed)
-        for r in rets: r.classes = self.classes  # type: ignore
-        return rets
 
 def show_images(images, layout, scale):
     nrows, ncols = layout
@@ -239,7 +209,7 @@ import pandas as pd
 class TestBaseDataset(unittest.TestCase):
     def setUp(self):
         self.df = pd.DataFrame({'file_path':[1,2,3,4,5,6]})
-        self.ds = BaseDataset(self.df)
+        self.ds = BaseDataset(self.df, core.EmptyReader(), 'file_path')
 
     def test_split(self):
         a, b = self.ds.split(0.5)
@@ -267,9 +237,9 @@ class TestBaseDataset(unittest.TestCase):
     def test_add(self):
         @BaseDataset.add
         def test():
-            return BaseDataset(self.df)
+            return BaseDataset(self.df, core.EmptyReader(), None)
 
-        BaseDataset.add('test2', BaseDataset, [self.df])
+        BaseDataset.add('test2', BaseDataset, [self.df, core.EmptyReader(), None])
 
     def test_get(self):
         self.assertTrue(BaseDataset.get('test').df.equals(self.df))
@@ -278,21 +248,8 @@ class TestBaseDataset(unittest.TestCase):
     def test_list(self):
         self.assertEqual(BaseDataset.list(), ['test', 'test2'])
 
-
-    def test_from_df_func(self):
-        ds = BaseDataset.from_df_func(None, lambda reader: self.df)
-        self.assertTrue(ds.df.equals(self.df))
-
-class TestClassificationDataset(unittest.TestCase):
-    def setUp(self):
-        self.df = pd.DataFrame({'class_name':[1,2,3,1,2,3]})
-        self.ds = ClassificationDataset(self.df)
-
-    def test_split(self):
-        a, b = self.ds.split(0.8)
-        self.assertEqual(b.df['class_name'].tolist(), [1,2])
-        self.assertEqual(a.classes, [1,2,3])
-        self.assertEqual(b.classes, [1,2,3])
+    def test_label(self):
+        self.assertEqual(self.ds.label.tolist(), [1, 2, 3, 4, 5, 6])
 ```
 
 ```{.python .input  n=4}
