@@ -32,27 +32,30 @@ class BaseDataset(object):
     :cvar TYPE: The string type of this dataset, such as ``image_classification``
     """
     def __init__(self, df: pd.DataFrame, reader: core.Reader,
-                 label_name: Optional[Union[str, int]]) -> None:
+                 label_name: Optional[Union[str, int]] = None) -> None:
         if not isinstance(df, pd.DataFrame):
             raise TypeError(f'{type(df)} is not pandas DataFrame')
         if not isinstance(reader, core.Reader):
             raise TypeError(f'{type(reader)} is not core.Reader')
-        if label_name is not None:
-            if isinstance(label_name, int):
-                label_name = df.columns[label_name]
-            if label_name not in df.columns:
-                raise ValueError(f'Label_name {label_name} is not in {df.columns}')
-            df = df[~df[label_name].isnull()]
         if len(df) == 0:
             logging.warning('No example is found as `df` is empty.')
             logging.warning('You may use `ds.reader.list_files()` to check all files.')
         self.df = df
         self.reader = reader
-        self.label_name = label_name
+        self.set_label_name(label_name)
         self.name = ''
 
     TYPE = ''
     _DATASETS = dict()  # type: ignore
+
+    def set_label_name(self, label_name) -> None:
+        if label_name is not None:
+            if isinstance(label_name, int):
+                label_name = self.df.columns[label_name]
+            if label_name not in self.df.columns:
+                raise ValueError(f'Label_name {label_name} is not in {self.df.columns}')
+            self.df = self.df[~self.df[label_name].isnull()]
+        self.label_name = label_name
 
     def __len__(self) -> int:
         """Return the number of examples."""
@@ -69,7 +72,7 @@ class BaseDataset(object):
     def unique_labels(self):
         x = self.labels.unique()
         return sorted(self.labels.unique())
-        
+
     def split(self, frac: Union[float, Sequence[float]], shuffle: bool = True, seed: int = 0) -> List['BaseDataset']:
         """Split a dataset.
 
@@ -91,7 +94,8 @@ class BaseDataset(object):
         for i, f in enumerate(fracs):
             if f <= 0: raise ValueError(f'frac {f} is not in (0, 1)')
             e = int(sum(fracs[:(i+1)]) * len(df))
-            rets.append(self.__class__(df.iloc[s:e].reset_index(), self.reader, self.label_name))
+            rets.append(self.__class__(df.iloc[s:e].reset_index(), self.reader))
+            rets[-1].set_label_name(self.label_name)
             if self.name: rets[-1].name = f'{self.name}.{i}'
             s = e
         return rets
@@ -148,16 +152,16 @@ class BaseDataset(object):
     def _summary(self) -> pd.DataFrame:
         """Returns a summary about this dataset."""
         raise NotImplementedError()
-        
+
     def summary(self):
         """Returns a summary about this dataset."""
-        summary_path = core.DATAROOT/self.name/f'{self.TYPE}_summary.pkl' if self.name else None 
+        summary_path = core.DATAROOT/self.name/f'{self.TYPE}_summary.pkl' if self.name else None
         if summary_path and summary_path.is_file():
             return pd.read_pickle(summary_path)
         s = self._summary()
-        if summary_path and summary_path.parent.exists(): 
+        if summary_path and summary_path.parent.exists():
             s.to_pickle(summary_path)
-        return s 
+        return s
 
     @classmethod
     def summary_all(cls, quick: bool=False) -> pd.DataFrame:

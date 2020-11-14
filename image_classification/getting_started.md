@@ -6,8 +6,8 @@
 %autoreload 2
 %matplotlib inline
 
-from IPython import display
 import pandas as pd
+from IPython import display
 
 display.set_matplotlib_formats('svg')
 pd.set_option('precision', 2)

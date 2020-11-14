@@ -14,10 +14,10 @@ import unittest
 
 from d8 import core
 
-class Dataset(core.ClassificationDataset):
+class Dataset(core.BaseDataset):
     """The class of an image classification dataset."""
     def __init__(self, df: pd.DataFrame, reader: core.Reader):
-        super().__init__(df, reader, label='class_name')
+        super().__init__(df, reader, label_name='class_name')
 
     TYPE = 'image_classification'
 
@@ -38,20 +38,20 @@ class Dataset(core.ClassificationDataset):
             ax.imshow(img)
             ax.axis("off")
 
-    def summary(self) -> pd.DataFrame:
+    def _summary(self) -> pd.DataFrame:
         """Returns a summary about this dataset."""
-        path = self._get_summary_path()
-        if path and path.exists(): return pd.read_pickle(path)
         get_mean_std = lambda col: f'{col.mean():.1f} ± {col.std():.1f}'
         img_df = self.reader.get_image_info(self.df['file_path'])
-        summary = pd.DataFrame([{'# images':len(img_df),
+        return pd.DataFrame([{'# images':len(img_df),
                                  '# classes':len(self.classes),
                                  'image width':get_mean_std(img_df['width']),
                                  'image height':get_mean_std(img_df['height']),
                                  'size (GB)':img_df['size (KB)'].sum()/2**20,}])
-        if path and path.parent.exists(): summary.to_pickle(path)
-        return summary
 
+    @property
+    def classes(self):
+        return self.unique_labels
+    
     def __getitem__(self, idx):
         if idx < 0 or idx > self.__len__():
             raise IndexError(f'index {idx} out of range [0, {self.__len__()})')
@@ -81,7 +81,8 @@ class Dataset(core.ClassificationDataset):
         return MXDataset(self)
 
     @classmethod
-    def from_folders(cls, data_path: str, folders: Union[str, Sequence[str]]) -> 'Dataset':
+    def from_folders(cls, data_path: Union[str, Sequence[str]], 
+                     folders: Union[str, Sequence[str]]) -> 'Dataset':
         """Create a dataset when images from the same class are stored in the same folder.
 
         :param data_path: Either a URL or a local path. For the former, data will be downloaded automatically.
@@ -97,7 +98,7 @@ class Dataset(core.ClassificationDataset):
         return cls.from_label_func(data_path, label_func)
 
     @classmethod
-    def from_label_func(cls, data_path: str,
+    def from_label_func(cls, data_path: Union[str, Sequence[str]], 
                         label_func: Callable[[pathlib.Path], str]) -> 'Dataset':
         """Create a dataset from a function that maps a image path to its class name.
 
@@ -106,13 +107,13 @@ class Dataset(core.ClassificationDataset):
         :return: The created dataset.
         :param data_path:
         """
-        def get_df(reader):
-            entries = []
-            for file_path in reader.list_images():
-                lbl = label_func(file_path)
-                if lbl: entries.append({'file_path':file_path, 'class_name':lbl})
-            return pd.DataFrame(entries)
-        return cls.from_df_func(data_path, get_df)
+        reader = core.create_reader(data_path)
+        entries = []
+        for file_path in reader.list_images():
+            lbl = label_func(file_path)
+            if lbl: entries.append({'file_path':file_path, 'class_name':lbl})
+        df = pd.DataFrame(entries)
+        return cls(df, reader)
 
 
 class TestDataset(unittest.TestCase):
@@ -122,10 +123,20 @@ class TestDataset(unittest.TestCase):
                      ['https://www.kaggle.com/niteshfre/chessman-image-dataset', '*'])
         ds = Dataset.get('chessman_test')
         self.assertEqual(len(ds.df), 552)
-        self.assertEqual(ds.classes, ['Bishop', 'King', 'Knight', 'Pawn', 'Queen', 'Rook'])
+        self.assertEqual(ds.unique_labels, ['Bishop', 'King', 'Knight', 'Pawn', 'Queen', 'Rook'])
         items = ds[10]
         self.assertEqual(len(items), 2)
         self.assertEqual(items[0].shape[2], 3)
+        
+    def test_from_label_func(self):
+        name = 'test-honey-bee'
+        Dataset.add(name, Dataset.from_label_func,
+                     ['https://www.kaggle.com/jenny18/honey-bee-annotated-images', 
+                      lambda path: path.name.split('_')[0]])
+        ds = Dataset.get(name)
+        self.assertEqual(len(ds.df), 5172) 
+        self.assertEqual(len(ds.unique_labels), 45)
+    
 
 
 

@@ -16,7 +16,6 @@ The :class:`Dataset` class provides multiple class methods to construct an image
 
    Dataset.from_folders
    Dataset.from_label_func
-   Dataset.from_df_func
 
 ```
 
@@ -244,15 +243,6 @@ for y in from_label_func_meta:
 show('flower-10')
 ```
 
-## `from_df_func`
-
-A `df_func` should return a Pandas DataFrame that contains at least two columns. One column is called `file_path`, containing the relative image file paths related to the root, the other column is called `class_name`, containing the image labels. Let's look at example.
-
-```{.python .input  n=5}
-ds = Dataset.get('boat')
-ds.df.head(n=3)
-```
-
-TODO(mli) add an example here.
+TODO(mli) add an example to construct from scratch.
 
 Last, you can check the detailed information of all added datasets in :ref:`image_classification_built_in`.
