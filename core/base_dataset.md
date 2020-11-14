@@ -12,6 +12,7 @@
 ```{.python .input  n=1}
 #@save_all
 #@hide_all
+import copy
 import logging
 import pathlib
 from typing import Callable, List, Optional, Sequence, Type, TypeVar, Union
@@ -47,25 +48,22 @@ class BaseDataset(object):
             raise TypeError(f'{type(df)} is not pandas DataFrame')
         if not isinstance(reader, core.Reader):
             raise TypeError(f'{type(reader)} is not core.Reader')
+        if label_name is not None:
+            if isinstance(label_name, int):
+                label_name = df.columns[label_name]
+            if label_name not in df.columns:
+                raise ValueError(f'Label_name {label_name} is not in {df.columns}')
+            df = df[~df[label_name].isnull()]
         if len(df) == 0:
             logging.warning('No example is found as `df` is empty.')
             logging.warning('You may use `ds.reader.list_files()` to check all files.')
         self.df = df
         self.reader = reader
-        self.set_label_name(label_name)
+        self.label_name = label_name
         self.name = ''
 
     TYPE = ''
     _DATASETS = dict()  # type: ignore
-
-    def set_label_name(self, label_name) -> None:
-        if label_name is not None:
-            if isinstance(label_name, int):
-                label_name = self.df.columns[label_name]
-            if label_name not in self.df.columns:
-                raise ValueError(f'Label_name {label_name} is not in {self.df.columns}')
-            self.df = self.df[~self.df[label_name].isnull()]
-        self.label_name = label_name
 
     def __len__(self) -> int:
         """Return the number of examples."""
@@ -80,7 +78,6 @@ class BaseDataset(object):
 
     @property
     def classes(self):
-        x = self.labels.unique()
         return sorted(self.labels.unique())
 
     def split(self, frac: Union[float, Sequence[float]], shuffle: bool = True, seed: int = 0) -> List['BaseDataset']:
@@ -94,6 +91,7 @@ class BaseDataset(object):
         :param seed: The random seed (default 0) to shuffle the examples given ``shuffle=True``.
         :return: A list of datasets, each has the same type as this instance.
         """
+        
         df = self.df.sample(frac=1, random_state=seed) if shuffle else self.df
         fracs = core.listify(frac)
         if sum(fracs) >= 1:
@@ -101,13 +99,18 @@ class BaseDataset(object):
         fracs = fracs + [1.0 - sum(fracs)]
         rets = []
         s = 0
+        self_df, self.df = self.df, None 
         for i, f in enumerate(fracs):
-            if f <= 0: raise ValueError(f'frac {f} is not in (0, 1)')
+            if f <= 0: 
+                raise ValueError(f'frac {f} is not in (0, 1)')
             e = int(sum(fracs[:(i+1)]) * len(df))
-            rets.append(self.__class__(df.iloc[s:e].reset_index(), self.reader))
-            rets[-1].set_label_name(self.label_name)
-            if self.name: rets[-1].name = f'{self.name}.{i}'
+            new_ds = copy.deepcopy(self) 
+            new_ds.df = df.iloc[s:e].reset_index()
+            if new_ds.name: 
+                new_ds.name += f'.{i}'
+            rets.append(new_ds)
             s = e
+        self.df = self_df
         return rets
 
     def merge(self, *args: 'BaseDataset') -> 'BaseDataset':
@@ -115,14 +118,16 @@ class BaseDataset(object):
 
         :param args: One or multiple datasets
         :return: A new dataset with examples merged.
-        """
+        """        
         dfs = [self.df]
         for ds in args:
             if ds.reader != self.reader:
                 raise ValueError('You cannot merge with another dataset with a different reader')
             dfs.append(ds.df)
-        merged_ds = self.__class__(pd.concat(dfs, axis=0, ignore_index=True), self.reader, self.label_name)
-        if self.name: merged_ds.name = self.name+'.merged'
+        self.df = None
+        merged_ds = copy.deepcopy(self) 
+        merged_ds.df = pd.concat(dfs, axis=0, ignore_index=True)
+        self.df = dfs[0] 
         return merged_ds
 
     @classmethod
@@ -246,7 +251,6 @@ class TestBaseDataset(unittest.TestCase):
         ds = rets[0].merge(*rets[1:])
         self.assertTrue(ds.df['file_path'].equals(self.ds.df['file_path']))
 
-
     def test_add(self):
         @BaseDataset.add
         def test():
@@ -272,4 +276,24 @@ class TestBaseDataset(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
+```
+
+```{.json .output n=4}
+[
+ {
+  "name": "stderr",
+  "output_type": "stream",
+  "text": "......"
+ },
+ {
+  "name": "stdout",
+  "output_type": "stream",
+  "text": "Success: no issues found in 1 source file\nType checking successful\n"
+ },
+ {
+  "name": "stderr",
+  "output_type": "stream",
+  "text": "\n----------------------------------------------------------------------\nRan 6 tests in 0.018s\n\nOK\n"
+ }
+]
 ```

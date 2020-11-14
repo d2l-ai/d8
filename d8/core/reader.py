@@ -1,22 +1,7 @@
-# Reading Data
+# This file is generated from core/reader.md automatically through:
+#    d2lbook build lib
+# Don't edit it directly
 
-```eval_rst
-
-.. currentmodule:: d8.core
-
-.. autoclass:: Reader
-
-```
-
-
-```eval_rst
-
-.. automethod:: create_reader
-
-```
-
-
-```{.python .input  n=2}
 #@save_all
 #@hide_all
 from typing import Union, List, Sequence, Optional, TypeVar
@@ -38,17 +23,13 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 from d8 import core 
 
 __all__ = ['Reader', 'EmptyReader', 'FolderReader', 'TarReader', 'ZipReader', 'create_reader', 'listify']
-```
 
-```{.python .input}
 #_E = TypeVar("_E")
 #def listify(x: Optional[Union[_E, Sequence[_E]]]) -> List[_E]:
 def listify(x):
     """Make x a list if it isn't."""
     return [] if not x else (list(x) if isinstance(x, (tuple, list)) else [x])
-```
 
-```{.python .input  n=3}
 class Reader(abc.ABC):
     """The base class of the data reader.
 
@@ -60,11 +41,15 @@ class Reader(abc.ABC):
             raise NameError(f'{root} doesn\'t exists')
         self._root = root
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(object, Reader):
-            return NotImplemented
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Reader):
+            raise NotImplementedError()
+        
         return self._root == other._root
 
+    def __ne__(self, obj):
+        return not self == obj
+    
     @abc.abstractclassmethod
     def open(self, path: Union[str, pathlib.Path]):
         """Open file and return a stream.
@@ -137,9 +122,7 @@ class Reader(abc.ABC):
                         'width':img.size[0], 'height':img.size[1]})
         return pd.DataFrame(rows)
 
-```
 
-```{.python .input}
 class EmptyReader(Reader):
     def __init__(self):
         pass
@@ -147,6 +130,10 @@ class EmptyReader(Reader):
         return []
     def open(self, path: Union[str, pathlib.Path]):
         raise ValueError('Empty reader cannot open a path')
+    def __eq__(self, other) -> bool:        
+        if not isinstance(other, EmptyReader):
+            raise NotImplementedError()
+        return True 
 
 class FolderReader(Reader):
     def __init__(self, root: pathlib.Path):
@@ -190,9 +177,7 @@ class TarReader(Reader):
 
     def _list_all(self):
         return [pathlib.Path(fn) for fn in self._root_fp.getmembers()]
-```
 
-```{.python .input}
 def create_reader(data_path: Union[str, Sequence[str]], 
                   name : Optional[str] = None) -> Reader:
     """Create a data reader. 
@@ -216,9 +201,7 @@ def create_reader(data_path: Union[str, Sequence[str]],
     if path.suffix in ['.tar', '.tgz', '.gz']:
         return TarReader(path)
     raise ValueError(f'Not support {path}')
-```
 
-```{.python .input}
 import unittest
 
 class TestListify(unittest.TestCase):
@@ -242,12 +225,15 @@ class TestReader(unittest.TestCase):
         with r.open('iris.data') as f:
             lines = f.readlines()
             self.assertEqual(len(lines), 151)
-```
+            
+    def test_equal(self):
+        a = create_reader('/') 
+        b = create_reader('/') 
+        self.assertEqual(a, b)
 
-```{.python .input}
-%load_ext mypy_ipython
-%mypy
+
+
 
 if __name__ == '__main__':
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
-```
+

@@ -1,7 +1,7 @@
 # Core API
 
 ```toc
-data_downloader
-data_reader
+downloader
+reader
 base_dataset
 ```

@@ -1,4 +1,4 @@
-# This file is generated from core/data_downloader.md automatically through:
+# This file is generated from core/downloader.md automatically through:
 #    d2lbook build lib
 # Don't edit it directly
 

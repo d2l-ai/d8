@@ -1,3 +1,3 @@
-from .data_reader import *
-from .data_downloader import *
+from .reader import *
+from .downloader import *
 from .base_dataset import *
