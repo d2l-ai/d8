@@ -59,12 +59,17 @@ class BaseDataset(object):
         return len(self.df)
 
     @property
-    def label(self):
+    def labels(self):
         """Return the list of labels."""
         if self.label_name is None:
             raise ValueError('label_name is None')
-        return self.df[label_name]
+        return self.df[self.label_name]
 
+    @property
+    def unique_labels(self):
+        x = self.labels.unique()
+        return sorted(self.labels.unique())
+        
     def split(self, frac: Union[float, Sequence[float]], shuffle: bool = True, seed: int = 0) -> List['BaseDataset']:
         """Split a dataset.
 
@@ -140,35 +145,19 @@ class BaseDataset(object):
         """Return the list of names of added datasets."""
         return [name for typ, name in cls._DATASETS if typ == cls.TYPE]
 
-    @classmethod
-    def create_reader(cls, data_path: Optional[Union[str, Sequence[str]]], name: Optional[str]=None) -> core.Reader:
-        def download(data_path):
-            return [(p if pathlib.Path(p).exists() else core.download(p, extract=True)) for p in data_path]
-        if name:
-            with core.NameContext(name):
-                data_path = download(core.listify(data_path))
-        else:
-            data_path = download(core.listify(data_path))
-        return core.create_reader(data_path)
-
-    @classmethod
-    def from_df_func(cls: Type[_T], data_path: Optional[Union[str, Sequence[str]]],
-                     df_func: Callable[[core.Reader], pd.DataFrame]) -> _T:
-        """Create a dataset from a dataframe function.
-
-        :param data_path: A remote URL (data will be downloaded automatically) or a local data_path, or a list of them
-        :param df_func: A function takes `self.reader` as its input to return the dataframe.
-        """
-        reader = cls.create_reader(data_path)
-        return cls(df_func(reader), reader)
-
-    def summary(self) -> pd.DataFrame:
+    def _summary(self) -> pd.DataFrame:
         """Returns a summary about this dataset."""
         raise NotImplementedError()
-
-    def _get_summary_path(self) -> Optional[pathlib.Path]:
-        if not self.name: return None
-        return pathlib.Path(core.DATAROOT/self.name/f'{self.TYPE}_summary.pkl')
+        
+    def summary(self):
+        """Returns a summary about this dataset."""
+        summary_path = core.DATAROOT/self.name/f'{self.TYPE}_summary.pkl' if self.name else None 
+        if summary_path and summary_path.is_file():
+            return pd.read_pickle(summary_path)
+        s = self._summary()
+        if summary_path and summary_path.parent.exists(): 
+            s.to_pickle(summary_path)
+        return s 
 
     @classmethod
     def summary_all(cls, quick: bool=False) -> pd.DataFrame:
@@ -182,18 +171,16 @@ class BaseDataset(object):
         names = []
         for name in cls.list():
             if quick:
-                ds = cls(df=pd.DataFrame([{'class_name':'fack'}]), 
-                         reader=core.EmptyReader(),
-                         label_name='class_name')
-                ds.name = name
-                path = ds._get_summary_path()
-                if not path or not path.exists():
+                summary_path = core.DATAROOT/name/f'{cls.TYPE}_summary.pkl'
+                if summary_path.is_file():
+                    summary = pd.read_pickle(summary_path)
+                else:
                     failed.append(name)
                     continue
             else:
-                ds = cls.get(name)
+                summary = cls.get(name).summary()
             names.append(name)
-            summaries.append(ds.summary().iloc[0])
+            summaries.append(summary.iloc[0])
         summary = pd.DataFrame(summaries, index=names)
         if failed:
             logging.warning(f'Failed to load summary info for {len(failed)} datasets. '
@@ -218,14 +205,14 @@ import pandas as pd
 
 class TestBaseDataset(unittest.TestCase):
     def setUp(self):
-        self.df = pd.DataFrame({'file_path':[1,2,3,4,5,6]})
+        self.df = pd.DataFrame({'file_path':[1,2,3,4,5,5]})
         self.ds = BaseDataset(self.df, core.EmptyReader(), 'file_path')
 
     def test_split(self):
         a, b = self.ds.split(0.5)
         self.assertEqual(len(a), 3)
         self.assertEqual(len(b), 3)
-        self.assertEqual(a.df['file_path'].tolist(), [6, 3, 2])
+        self.assertEqual(a.df['file_path'].tolist(), [5, 3, 2])
 
         c, d = self.ds.split(0.5)
         self.assertTrue(c.df.equals(a.df))
@@ -258,6 +245,9 @@ class TestBaseDataset(unittest.TestCase):
     def test_list(self):
         self.assertEqual(BaseDataset.list(), ['test', 'test2'])
 
+    def test_labels(self):
+        self.assertEqual(self.ds.labels.tolist(), [1, 2, 3, 4, 5, 5])
+        self.assertEqual(self.ds.unique_labels, [1, 2, 3, 4, 5])
 
 
 
