@@ -11,7 +11,7 @@
 
 ```eval_rst
 
-.. automethod:: create_reader
+.. autofunction:: create_reader
 
 ```
 
@@ -19,23 +19,25 @@
 ```{.python .input  n=2}
 #@save_all
 #@hide_all
-from typing import Union, List, Sequence, Optional, TypeVar
-import zipfile
-import tarfile
-import pathlib
 import abc
+import glob
+import io
+import logging
 import mimetypes
 import os
-import PIL
-import pandas as pd
-import io
-import glob
-import logging
+import pathlib
+import tarfile
+import zipfile
+from typing import List, Optional, Sequence, TypeVar, Union
 
+import pandas as pd
+import PIL
 from PIL import ImageFile
+
+from d8 import core
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-from d8 import core 
 
 __all__ = ['Reader', 'EmptyReader', 'FolderReader', 'TarReader', 'ZipReader', 'create_reader', 'listify']
 ```

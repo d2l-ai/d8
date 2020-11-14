@@ -4,6 +4,7 @@
 
 #@save_all
 #@hide_all
+import abc
 import copy
 import logging
 import pathlib
@@ -18,7 +19,7 @@ __all__ = ['BaseDataset', 'show_images']
 
 _T = TypeVar("_T", bound='BaseDataset')
 
-class BaseDataset(object):
+class BaseDataset(abc.ABC):
     """The base class of a dataset.
 
     :param df: Depends on the dataset type, it either contains the data (e.g. tabular and text)
@@ -154,9 +155,11 @@ class BaseDataset(object):
         """Return the list of names of added datasets."""
         return [name for typ, name in cls._DATASETS if typ == cls.TYPE]
 
+    @abc.abstractclassmethod
     def _summary(self) -> pd.DataFrame:
         """Returns a summary about this dataset."""
-        raise NotImplementedError()
+        pass
+        
 
     def summary(self):
         """Returns a summary about this dataset."""
@@ -210,13 +213,17 @@ def show_images(images, layout, scale):
     return axes
 
 import unittest
+from unittest.mock import patch
 import pandas as pd
 
 class TestBaseDataset(unittest.TestCase):
+    
+    @patch.multiple(BaseDataset, __abstractmethods__=set())
     def setUp(self):
         self.df = pd.DataFrame({'file_path':[1,2,3,4,5,5]})
         self.ds = BaseDataset(self.df, core.EmptyReader(), 'file_path')
-
+        
+    @patch.multiple(BaseDataset, __abstractmethods__=set())
     def test_split(self):
         a, b = self.ds.split(0.5)
         self.assertEqual(len(a), 3)
@@ -234,11 +241,13 @@ class TestBaseDataset(unittest.TestCase):
         self.assertEqual(len(rets[2]), 2)
         self.assertEqual(len(rets[3]), 1)
 
+    @patch.multiple(BaseDataset, __abstractmethods__=set())
     def test_merge(self):
         rets = self.ds.split([0.3, 0.4], shuffle=False)
         ds = rets[0].merge(*rets[1:])
         self.assertTrue(ds.df['file_path'].equals(self.ds.df['file_path']))
 
+    @patch.multiple(BaseDataset, __abstractmethods__=set())
     def test_add(self):
         @BaseDataset.add
         def test():
@@ -246,6 +255,7 @@ class TestBaseDataset(unittest.TestCase):
 
         BaseDataset.add('test2', BaseDataset, [self.df, core.EmptyReader(), None])
 
+    @patch.multiple(BaseDataset, __abstractmethods__=set())
     def test_get(self):
         self.assertTrue(BaseDataset.get('test').df.equals(self.df))
         self.assertTrue(BaseDataset.get('test2').df.equals(self.df))
