@@ -6,6 +6,9 @@
 
 .. autoclass:: BaseDataset
 
+   :members:
+   :show-inheritance:
+   :inherited-members:
 ```
 
 

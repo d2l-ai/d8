@@ -4,14 +4,41 @@
 
 .. currentmodule:: d8.core
 
-.. autoclass:: Reader
+```
+
+We can use the :func:`create_reader` function to read data from various data format. 
+
+```
+.. autofunction:: create_reader
 
 ```
 
+The `data_path` argument can be either a local folder path, a zip/tar file path, or a list of them. A more convenient way is passing a URL, or list of URL, that :func:`download` supports. For example, the following code download the Titanic competition data from Kaggle and list all files. 
+
+```{.python .input}
+import pandas as pd
+
+from d8 import core
+
+reader = core.create_reader('https://www.kaggle.com/c/titanic', name='titanic')
+reader.list_files()
+```
+
+Later on, we can open a file to read contents. 
+
+```{.python .input}
+pd.read_csv(reader.open('train.csv')).head()
+```
+
+:func:`create_reader` returns an instance of :class:`Reader`. It provides methods to list and read files. 
 
 ```eval_rst
 
-.. autofunction:: create_reader
+.. autoclass:: Reader 
+
+   :members:
+   :show-inheritance:
+   :inherited-members:
 
 ```
 
