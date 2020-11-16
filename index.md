@@ -42,6 +42,12 @@ the problem type you are interested.
         Datasets to detect multiple objects with their bounding boxes in an image.
 
     .. card::
+        :title: Tabular Classification
+        :link: tabular_classification/getting_started.html
+
+        Datasets to predict values in a column based on other columns' values.
+
+    .. card::
         :title: Semantic Segmentation
         :link: semantic_segmentation/dataset.html
 
