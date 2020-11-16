@@ -5,10 +5,10 @@
 .. currentmodule:: d8.core
 
 .. autoclass:: BaseDataset
-
    :members:
    :show-inheritance:
    :inherited-members:
+
 ```
 
 
@@ -95,7 +95,7 @@ class BaseDataset(abc.ABC):
         :param seed: The random seed (default 0) to shuffle the examples given ``shuffle=True``.
         :return: A list of datasets, each has the same type as this instance.
         """
-        
+
         df = self.df.sample(frac=1, random_state=seed) if shuffle else self.df
         fracs = core.listify(frac)
         if sum(fracs) >= 1:
@@ -103,14 +103,14 @@ class BaseDataset(abc.ABC):
         fracs = fracs + [1.0 - sum(fracs)]
         rets = []
         s = 0
-        self_df, self.df = self.df, None 
+        self_df, self.df = self.df, None
         for i, f in enumerate(fracs):
-            if f <= 0: 
+            if f <= 0:
                 raise ValueError(f'frac {f} is not in (0, 1)')
             e = int(sum(fracs[:(i+1)]) * len(df))
-            new_ds = copy.deepcopy(self) 
+            new_ds = copy.deepcopy(self)
             new_ds.df = df.iloc[s:e].reset_index()
-            if new_ds.name: 
+            if new_ds.name:
                 new_ds.name += f'.{i}'
             rets.append(new_ds)
             s = e
@@ -122,16 +122,16 @@ class BaseDataset(abc.ABC):
 
         :param args: One or multiple datasets
         :return: A new dataset with examples merged.
-        """        
+        """
         dfs = [self.df]
         for ds in args:
             if ds.reader != self.reader:
                 raise ValueError('You cannot merge with another dataset with a different reader')
             dfs.append(ds.df)
         self.df = None
-        merged_ds = copy.deepcopy(self) 
+        merged_ds = copy.deepcopy(self)
         merged_ds.df = pd.concat(dfs, axis=0, ignore_index=True)
-        self.df = dfs[0] 
+        self.df = dfs[0]
         return merged_ds
 
     @classmethod
@@ -172,7 +172,7 @@ class BaseDataset(abc.ABC):
     def _summary(self) -> pd.DataFrame:
         """Returns a summary about this dataset."""
         pass
-        
+
 
     def summary(self):
         """Returns a summary about this dataset."""
@@ -232,12 +232,12 @@ from unittest.mock import patch
 import pandas as pd
 
 class TestBaseDataset(unittest.TestCase):
-    
+
     @patch.multiple(BaseDataset, __abstractmethods__=set())
     def setUp(self):
         self.df = pd.DataFrame({'file_path':[1,2,3,4,5,5]})
         self.ds = BaseDataset(self.df, core.EmptyReader(), 'file_path')
-        
+
     @patch.multiple(BaseDataset, __abstractmethods__=set())
     def test_split(self):
         a, b = self.ds.split(0.5)

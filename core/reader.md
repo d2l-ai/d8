@@ -8,7 +8,8 @@
 
 We can use the :func:`create_reader` function to read data from various data format.
 
-```
+```eval_rst
+
 .. autofunction:: create_reader
 
 ```
@@ -35,7 +36,6 @@ pd.read_csv(reader.open('train.csv')).head()
 ```eval_rst
 
 .. autoclass:: Reader
-
    :members:
    :show-inheritance:
    :inherited-members:
