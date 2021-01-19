@@ -156,3 +156,34 @@ class Dataset(core.BaseDataset):
         df = pd.concat(dfs, axis=0, ignore_index=True)
         return cls(df, reader)
 
+    def to_mxnet(self):
+        """Returns a MXNet dataset instance for object detection"""
+        import mxnet as mx
+        import numpy as np
+
+        class MXDataset(mx.gluon.data.Dataset):
+            def __init__(self, dataset):
+                self.data = list(dataset.df.groupby('file_path'))
+                self.reader = dataset.reader
+                self.classes = dataset.classes
+                self.label_to_idx = {n:i for i, n in enumerate(self.classes)}
+
+            def __getitem__(self, idx):
+                sample = self.data[idx]
+                filepath = sample[0]
+                img = self.reader.read_image(filepath)
+                img = mx.nd.array(img)
+                width, height = img.shape[1], img.shape[0]
+                label = []
+                for _, row in sample[1].iterrows():
+                    cls_id = float(self.label_to_idx[row['class_name']])
+                    label.append([row['xmin'], row['ymin'], row['xmax'], row['ymax'], cls_id])
+                label = np.array(label)
+                label[:, (0, 2)] *= width
+                label[:, (1, 3)] *= height
+                return img, label
+
+            def __len__(self):
+                return len(self.data)
+
+        return MXDataset(self)
