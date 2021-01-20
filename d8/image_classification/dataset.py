@@ -33,7 +33,11 @@ class Dataset(core.BaseDataset):
         _, axes = plt.subplots(nrows, ncols, figsize=figsize)
         samples = self.df.sample(n=nrows*ncols, random_state=0)
         for ax, (_, sample) in zip(axes.flatten(), samples.iterrows()):
-            ax.set_title(sample['class_name'])
+            class_name = sample['class_name']
+            if 'confidence' in sample:
+                # add confidence to class_name if available
+                class_name += f': {float(sample['confidence']):.2f}'
+            ax.set_title(class_name)
             img = self.reader.read_image(sample['file_path'], max_width=max_width)
             ax.imshow(img)
             ax.axis("off")
@@ -139,4 +143,3 @@ class TestDataset(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
-
