@@ -118,7 +118,11 @@ class Dataset(core.BaseDataset):
                     height=(row['ymax']-row['ymin'])*img_height,
                     fill=False, edgecolor=class_to_color[row['class_name']], linewidth=2)
                 ax.add_patch(bbox)
-                ax.text(bbox.xy[0], bbox.xy[1], row['class_name'],
+                class_name = row['class_name']
+                if 'confidence' in row:
+                    # add confidence to the text if available
+                    class_name += ': ' + str(row['confidence'])
+                ax.text(bbox.xy[0], bbox.xy[1], class_name,
                       va='center', ha='center', fontsize=7, color='w',
                       bbox=dict(facecolor=class_to_color[row['class_name']],
                                 lw=0, alpha=1, pad=2))
