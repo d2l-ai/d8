@@ -36,7 +36,7 @@ class Dataset(core.BaseDataset):
             class_name = sample['class_name']
             if 'confidence' in sample:
                 # add confidence to class_name if available
-                class_name += ': ' + str(sample['confidence'])
+                class_name += f': {float(sample['confidence']):.2f}'
             ax.set_title(class_name)
             img = self.reader.read_image(sample['file_path'], max_width=max_width)
             ax.imshow(img)

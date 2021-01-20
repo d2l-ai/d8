@@ -121,7 +121,7 @@ class Dataset(core.BaseDataset):
                 class_name = row['class_name']
                 if 'confidence' in row:
                     # add confidence to the text if available
-                    class_name += ': ' + str(row['confidence'])
+                    class_name += f': {float(row['confidence']):.2f}'
                 ax.text(bbox.xy[0], bbox.xy[1], class_name,
                       va='center', ha='center', fontsize=7, color='w',
                       bbox=dict(facecolor=class_to_color[row['class_name']],
