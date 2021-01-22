@@ -106,9 +106,7 @@ import numpy as np
 import unittest
 
 from d8 import core
-```
 
-```{.python .input  n=8}
 class Dataset(core.BaseDataset):
     """The class of an image classification dataset."""
     def __init__(self, df: pd.DataFrame, reader: core.Reader):
@@ -128,7 +126,11 @@ class Dataset(core.BaseDataset):
         _, axes = plt.subplots(nrows, ncols, figsize=figsize)
         samples = self.df.sample(n=nrows*ncols, random_state=0)
         for ax, (_, sample) in zip(axes.flatten(), samples.iterrows()):
-            ax.set_title(sample['class_name'])
+            class_name = sample['class_name']
+            if 'confidence' in sample:
+                # add confidence to class_name if available
+                class_name += f': {float(sample["confidence"]):.2f}'
+            ax.set_title(class_name)
             img = self.reader.read_image(sample['file_path'], max_width=max_width)
             ax.imshow(img)
             ax.axis("off")
@@ -206,9 +208,7 @@ class Dataset(core.BaseDataset):
         df = pd.DataFrame(entries)
         return cls(df, reader)
 
-```
 
-```{.python .input}
 class TestDataset(unittest.TestCase):
 
     def test_from_folders(self):
@@ -229,12 +229,6 @@ class TestDataset(unittest.TestCase):
         ds = Dataset.get(name)
         self.assertEqual(len(ds.df), 5172)
         self.assertEqual(len(ds.classes), 45)
-
-```
-
-```{.python .input}
-%load_ext mypy_ipython
-%mypy
 
 if __name__ == '__main__':
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
